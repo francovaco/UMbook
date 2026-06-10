@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:600px;">
+  <div class="tarjeta" style="text-align:center;padding:48px 20px;">
+    <div style="font-size:42px;margin-bottom:14px;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:var(--azul);border-radius:18px;">
+        <span style="color:white;font-size:28px;font-weight:900;">UM</span>
+      </div>
+    </div>
+    <h2 style="font-size:22px;font-weight:700;color:var(--azul);">Bienvenido, {{ session.nombre }}!</h2>
+    <p style="color:var(--gris-texto);font-size:14px;margin-top:6px;">UMBook — Red social de la Universidad de Mendoza</p>
+  </div>
+</div>
+{% endblock %}

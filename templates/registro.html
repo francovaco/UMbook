@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titulo %}Crear cuenta — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor-angosto">
+  <div class="tarjeta">
+    <div class="login-logo">
+      <div class="logo-badge">UM</div>
+      <h1>Crear cuenta</h1>
+      <p>Completá tus datos para unirte</p>
+    </div>
+
+    {% if error %}
+    <div class="alerta alerta-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('registro') }}">
+      <div class="fila">
+        <div class="campo">
+          <label>Nombre</label>
+          <input type="text" name="nombre" placeholder="Tu nombre" value="{{ form.nombre }}" required>
+        </div>
+        <div class="campo">
+          <label>Apellido</label>
+          <input type="text" name="apellido" placeholder="Tu apellido" value="{{ form.apellido }}" required>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Correo institucional</label>
+        <input type="email" name="email" placeholder="usuario@um.edu.ar" value="{{ form.email }}" required>
+      </div>
+      <div class="campo">
+        <label>Contraseña</label>
+        <input type="password" name="contrasena" placeholder="Mínimo 6 caracteres" required>
+      </div>
+      <div class="campo">
+        <label>Repetir contraseña</label>
+        <input type="password" name="contrasena2" placeholder="Repetí tu contraseña" required>
+      </div>
+      <button type="submit" class="btn btn-primario btn-bloque">Crear cuenta</button>
+    </form>
+
+    <hr class="divider">
+    <p class="login-footer">
+      ¿Ya tenés cuenta? <a href="{{ url_for('login') }}">Iniciá sesión</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

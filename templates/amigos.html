@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titulo %}Mis amigos — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:680px;">
+
+  <div class="breadcrumb">
+    <a href="{{ url_for('home') }}">Inicio</a>
+    <span>›</span>
+    <span>Amigos</span>
+  </div>
+
+  <div class="tarjeta">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gris-borde);">
+      <h2 style="font-size:18px;font-weight:700;color:var(--azul);">Mis amigos</h2>
+      <span style="font-size:13px;font-weight:600;padding:4px 12px;background:var(--gris-fondo);border-radius:20px;color:var(--azul);">
+        {{ amigos|length }} amigo{% if amigos|length != 1 %}s{% endif %}
+      </span>
+    </div>
+
+    {% if exito %}
+    <div class="alerta alerta-exito">✓ {{ exito }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="alerta alerta-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    {% if amigos %}
+      {% for item in amigos %}
+      <div class="amigo-item">
+        <div class="avatar-chico" style="background:hsl({{ loop.index * 47 % 360 }},55%,45%);">
+          {{ item.usuario.nombre[0]|upper }}{{ item.usuario.apellido[0]|upper }}
+        </div>
+        <div class="amigo-datos">
+          <strong>{{ item.usuario.nombre }} {{ item.usuario.apellido }}</strong>
+          <span>{{ item.usuario.email }} · Amigos desde {{ item.desde }}</span>
+        </div>
+        <div class="amigo-acciones">
+          <button class="btn btn-peligro"
+                  onclick="confirmarEliminar({{ item.usuario.id }}, '{{ item.usuario.nombre }} {{ item.usuario.apellido }}')">
+            🗑 Eliminar
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="vacio">
+        <div style="font-size:40px;">👥</div>
+        <p>No tenés amigos registrados todavía.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modal-eliminar">
+  <div class="modal">
+    <h3>Eliminar amigo</h3>
+    <p id="modal-texto"></p>
+    <div class="modal-acciones">
+      <button class="btn btn-secundario" onclick="cerrarModal('modal-eliminar')">Cancelar</button>
+      <form method="POST" action="{{ url_for('eliminar_amigo') }}" id="form-eliminar" style="display:inline;">
+        <input type="hidden" name="amigo_id" id="input-amigo-id">
+        <button type="submit" class="btn btn-peligro">Eliminar</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function confirmarEliminar(amigoId, nombre) {
+  document.getElementById('input-amigo-id').value = amigoId;
+  document.getElementById('modal-texto').textContent =
+    '¿Querés eliminar a ' + nombre + ' de tus amigos? Esta acción no se puede deshacer.';
+  abrirModal('modal-eliminar');
+}
+</script>
+{% endblock %}

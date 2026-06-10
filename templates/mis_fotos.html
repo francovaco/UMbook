@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulo %}Álbumes — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:680px;">
+
+  <div class="breadcrumb">
+    <a href="{{ url_for('home') }}">Inicio</a>
+    <span>›</span>
+    <span>Álbumes</span>
+  </div>
+
+  <div class="tarjeta">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gris-borde);">
+      <h2 style="font-size:18px;font-weight:700;color:var(--azul);">Mis álbumes</h2>
+      <a href="{{ url_for('agregar_foto_demo') }}" class="btn btn-primario" style="font-size:13px;padding:7px 14px;">
+        + Agregar foto
+      </a>
+    </div>
+
+    {% if fotos %}
+      <div class="grid-fotos">
+        {% for foto in fotos %}
+        <a href="{{ url_for('detalle_foto', foto_id=foto.id) }}" class="foto-thumb" title="{{ foto.url_imagen }}">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <span style="font-size:24px;">📷</span>
+            <span style="font-size:11px;color:var(--gris-texto);">{{ foto.url_imagen[:14] }}</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      <p class="text-muted mt-16" style="font-size:12px;">
+        Hacé clic en una foto para ver y moderar sus comentarios.
+      </p>
+    {% else %}
+      <div class="vacio">
+        <div style="font-size:40px;">🖼️</div>
+        <p>No tenés fotos todavía.</p>
+        <a href="{{ url_for('agregar_foto_demo') }}" class="btn btn-primario" style="margin-top:16px;display:inline-flex;">
+          + Agregar foto de demo
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

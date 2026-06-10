@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}UMBook{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/umbook.css') }}">
+</head>
+<body>
+
+{% if session.usuario_id %}
+<header class="header">
+  <a class="header-brand" href="{{ url_for('home') }}">
+    <div style="width:32px;height:32px;background:white;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+      <span style="color:var(--azul);font-size:14px;font-weight:900;">UM</span>
+    </div>
+    <span>UMBook</span>
+  </a>
+  <nav class="header-nav">
+    <a href="{{ url_for('home') }}" {% if request.endpoint=='home' %}class="activo"{% endif %}>Inicio</a>
+    <a href="{{ url_for('amigos') }}" {% if request.endpoint=='amigos' %}class="activo"{% endif %}>Amigos</a>
+    <a href="{{ url_for('mis_fotos') }}" {% if request.endpoint in ['mis_fotos','detalle_foto'] %}class="activo"{% endif %}>Álbumes</a>
+    <div class="avatar-header" onclick="window.location='{{ url_for('perfil') }}'" title="{{ session.nombre }} {{ session.apellido }}">
+      {{ session.nombre[0]|upper }}{{ session.apellido[0]|upper }}
+    </div>
+    <a href="{{ url_for('logout') }}" style="color:rgba(255,255,255,0.6);font-size:13px;">Salir</a>
+  </nav>
+</header>
+{% endif %}
+
+{% block contenido %}{% endblock %}
+
+<script>
+function abrirModal(id) { document.getElementById(id).classList.add('activo'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('activo'); }
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.querySelectorAll('.modal-overlay.activo').forEach(m => m.classList.remove('activo'));
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

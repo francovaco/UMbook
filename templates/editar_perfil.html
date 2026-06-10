@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block titulo %}Editar perfil — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:680px;">
+
+  <div class="breadcrumb">
+    <a href="{{ url_for('perfil') }}">Mi perfil</a>
+    <span>›</span>
+    <span>Editar</span>
+  </div>
+
+  <div class="tarjeta">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gris-borde);">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="avatar-grande">
+          {{ usuario.nombre[0]|upper }}{{ usuario.apellido[0]|upper }}
+        </div>
+        <div>
+          <h2 style="font-size:18px;font-weight:700;">{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+          <p style="font-size:13px;color:var(--gris-texto);">{{ usuario.email }}</p>
+        </div>
+      </div>
+      <a href="{{ url_for('perfil') }}" class="btn btn-secundario">← Volver</a>
+    </div>
+
+    {% if error %}
+    <div class="alerta alerta-error">⚠ {{ error }}</div>
+    {% endif %}
+    {% if exito %}
+    <div class="alerta alerta-exito">✓ {{ exito }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('editar_perfil') }}" enctype="multipart/form-data">
+
+      <div class="campo">
+        <label>Foto de perfil <span class="text-muted">(JPG o PNG, máx. 5MB)</span></label>
+        <div class="foto-upload-area">
+          <span>📷</span>
+          <input type="file" name="foto_perfil" accept=".jpg,.jpeg,.png">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="fila">
+        <div class="campo">
+          <label>Nombre *</label>
+          <input type="text" name="nombre" value="{{ usuario.nombre }}" required maxlength="50" autofocus>
+        </div>
+        <div class="campo">
+          <label>Apellido *</label>
+          <input type="text" name="apellido" value="{{ usuario.apellido }}" required maxlength="50">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Correo institucional *</label>
+        <input type="email" name="email" value="{{ usuario.email }}" required>
+      </div>
+
+      <div class="fila">
+        <div class="campo">
+          <label>Fecha de nacimiento</label>
+          <input type="date" name="fecha_nac" value="{{ usuario.fecha_nac or '' }}">
+        </div>
+        <div class="campo">
+          <label>Días de aviso de cumpleaños <span class="text-muted">(1–30)</span></label>
+          <input type="number" name="dias_aviso" min="1" max="30" value="{{ usuario.dias_aviso or 7 }}">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn btn-primario">Guardar cambios</button>
+        <a href="{{ url_for('perfil') }}" class="btn btn-secundario">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor-angosto">
+  <div class="tarjeta">
+    <div class="login-logo">
+      <div class="logo-badge">UM</div>
+      <h1>UMBook</h1>
+      <p>Red social de la Universidad de Mendoza</p>
+    </div>
+
+    {% if error %}
+    <div class="alerta alerta-error">⚠ {{ error }}</div>
+    {% endif %}
+    {% if exito %}
+    <div class="alerta alerta-exito">✓ {{ exito }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="campo">
+        <label>Correo institucional</label>
+        <input type="email" name="email" placeholder="usuario@um.edu.ar" required autofocus>
+      </div>
+      <div class="campo">
+        <label>Contraseña</label>
+        <input type="password" name="contrasena" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primario btn-bloque">Iniciar sesión</button>
+    </form>
+
+    <hr class="divider">
+    <p class="login-footer">
+      ¿No tenés cuenta? <a href="{{ url_for('registro') }}">Registrate</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
