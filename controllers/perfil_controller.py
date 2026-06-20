@@ -1,6 +1,5 @@
 """
 Controlador — CU-02 Editar perfil
-Patrón MVC: «controller»
 Responsabilidad: coordinar la edición del perfil del usuario.
 Implementa el flujo del CU-02 según el diagrama de colaboración.
 """
@@ -13,7 +12,7 @@ from infrastructure.logger import Logger
 
 class PerfilController:
     """
-    Controlador MVC para el caso de uso CU-02 Editar perfil.
+    Controlador para el caso de uso CU-02 Editar perfil.
     Recibe datos del formulario, valida, verifica unicidad del email
     y coordina la actualización en el modelo.
     """
@@ -77,7 +76,6 @@ class PerfilController:
 
     def _validar_datos(self, datos: dict, usuario_id: int):
         """
-        Paso 4 del diagrama de colaboración: validarDatos (self).
         Valida formato de campos y unicidad del email.
         """
         if "nombre" in datos and not datos["nombre"].strip():

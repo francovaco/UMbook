@@ -31,13 +31,13 @@ python3 app.py
 
 Abrí el navegador en `http://127.0.0.1:5000`
 
-### Usuario de prueba
+### Usuarios de prueba
 
-| Campo      | Valor               |
-|------------|---------------------|
-| Email      | `vrodr@um.edu.ar`   |
-| Contraseña | `1234`              |
-| Nombre     | Valentina Rodriguez |
+| Nombre               | Email               | Contraseña |
+|-----------------------|----------------------|------------|
+| Valentina Rodriguez   | `vrodr@um.edu.ar`   | `1234`     |
+| Martín Díaz           | `mdiaz@um.edu.ar`   | `1234`     |
+| Lucía Fernández       | `lfern@um.edu.ar`   | `1234`     |
 
 ---
 

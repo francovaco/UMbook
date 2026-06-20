@@ -1,6 +1,5 @@
 """
 Controlador — CU-13 Moderar comentarios en fotos propias
-Patrón MVC: «controller»
 Responsabilidad: verificar propiedad de la foto y coordinar
 la eliminación del comentario.
 """
@@ -12,7 +11,7 @@ from infrastructure.logger import Logger
 
 class ModerarComentarioController:
     """
-    Controlador MVC para el caso de uso CU-13.
+    Controlador para el caso de uso CU-13.
     Verifica que el usuario es propietario de la foto antes
     de permitir la eliminación del comentario.
     """

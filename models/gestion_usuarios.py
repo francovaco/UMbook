@@ -1,7 +1,6 @@
 """
-Capa general de la aplicación — Gestión de Usuarios
+Capa general de la aplicación — Gestión de Usuarios.
 Responsabilidad: operaciones CRUD sobre la entidad Usuario.
-Usado por múltiples subsistemas de la capa específica.
 """
 
 from models.usuario import Usuario

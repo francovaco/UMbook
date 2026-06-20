@@ -1,6 +1,5 @@
 """
 Controlador — CU-06 Eliminar amigo
-Patrón MVC: «controller»
 Responsabilidad: coordinar la eliminación de un vínculo de amistad
 y la revocación de permisos asociados.
 """
@@ -13,7 +12,7 @@ from infrastructure.logger import Logger
 
 class EliminarAmigoController:
     """
-    Controlador MVC para el caso de uso CU-06 Eliminar amigo.
+    Controlador para el caso de uso CU-06 Eliminar amigo.
     Verifica la existencia de ambos usuarios, elimina el vínculo
     de forma atómica y revoca los permisos asociados.
     """

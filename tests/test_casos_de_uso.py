@@ -1,8 +1,3 @@
-"""
-Pruebas automatizadas para los 3 casos de uso.
-Verifican el comportamiento de controllers y modelos.
-"""
-
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

@@ -1,18 +1,15 @@
 """
-Capa intermedia — Persistencia
+Persistencia
 Patrón: Singleton para la conexión a la base de datos.
-Responsabilidad: administrar la conexión con el SGBD (SQLite).
+Responsabilidad: administrar la conexión con SQLite).
 """
 
 import sqlite3
-import os
 
 
 class Persistencia:
     """
     Clase Singleton que gestiona la conexión a la base de datos.
-    Implementa el mecanismo de diseño genérico de Persistencia
-    del diagrama de subsistemas.
     """
     _instancia = None
     _conexion = None

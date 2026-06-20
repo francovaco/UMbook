@@ -8,7 +8,6 @@ from datetime import datetime
 class Amistad:
     """
     Representa el vínculo de amistad entre dos usuarios.
-    Entidad persistente con ciclo de vida propio.
     """
 
     def __init__(self, id: int = None, usuario_origen: int = None,
