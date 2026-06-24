@@ -47,14 +47,28 @@ class GestionUsuarios:
             ).fetchone()
         return row is None
 
+    def nombre_usuario_disponible(self, nombre_usuario: str, excluir_id: int = None) -> bool:
+        """Verifica que el nombre de usuario no esté registrado por otro usuario."""
+        if excluir_id:
+            row = self._db.execute(
+                "SELECT id FROM usuario WHERE nombre_usuario = ? AND id != ?",
+                (nombre_usuario.strip(), excluir_id)
+            ).fetchone()
+        else:
+            row = self._db.execute(
+                "SELECT id FROM usuario WHERE nombre_usuario = ?", (nombre_usuario.strip(),)
+            ).fetchone()
+        return row is None
+
     def guardar(self, usuario: Usuario) -> Usuario:
         try:
             cursor = self._db.execute(
-                """INSERT INTO usuario (nombre, apellido, email, contrasena,
-                   foto_perfil, fecha_nac, dias_aviso, activo)
-                   VALUES (?,?,?,?,?,?,?,?)""",
+                """INSERT INTO usuario (nombre, apellido, email, nombre_usuario,
+                   contrasena, foto_perfil, fecha_nac, dias_aviso, activo)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
                 (usuario.nombre, usuario.apellido, usuario.email,
-                 usuario.contrasena, usuario.foto_perfil, usuario.fecha_nac,
+                 usuario.nombre_usuario, usuario.contrasena,
+                 usuario.foto_perfil, usuario.fecha_nac,
                  usuario.dias_aviso, 1 if usuario.activo else 0)
             )
             self._db.commit()
@@ -82,6 +96,7 @@ class GestionUsuarios:
             nombre=row["nombre"],
             apellido=row["apellido"],
             email=row["email"],
+            nombre_usuario=row["nombre_usuario"] or "",
             contrasena=row["contrasena"],
             foto_perfil=row["foto_perfil"],
             fecha_nac=row["fecha_nac"],

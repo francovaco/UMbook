@@ -35,14 +35,19 @@ class AuthController:
                 raise ErrorValidacion("Nombre y apellido son obligatorios.")
             if not datos.get("email") or "@" not in datos["email"]:
                 raise ErrorValidacion("Email inválido.")
+            if not datos.get("nombre_usuario") or not datos["nombre_usuario"].strip():
+                raise ErrorValidacion("El nombre de usuario es obligatorio.")
             if not datos.get("contrasena") or len(datos["contrasena"]) < 6:
                 raise ErrorValidacion("La contraseña debe tener al menos 6 caracteres.")
             if not self._gestion.email_disponible(datos["email"]):
                 raise ErrorNegocio("El email ya está registrado.")
+            if not self._gestion.nombre_usuario_disponible(datos["nombre_usuario"]):
+                raise ErrorNegocio("El nombre de usuario ya está en uso.")
             hash_pwd = self._seg.hashear_contrasena(datos["contrasena"])
             usuario = Usuario(
                 nombre=datos["nombre"], apellido=datos["apellido"],
-                email=datos["email"], contrasena=hash_pwd
+                email=datos["email"], nombre_usuario=datos["nombre_usuario"],
+                contrasena=hash_pwd
             )
             usuario = self._gestion.guardar(usuario)
             self._logger.registrar("REGISTRO", "EXITOSO", usuario.id)

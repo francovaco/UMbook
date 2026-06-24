@@ -208,16 +208,17 @@ def login():
 
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
-    form = {"nombre": "", "apellido": "", "email": ""}
+    form = {"nombre": "", "apellido": "", "email": "", "nombre_usuario": ""}
     if request.method == "POST":
-        form = {k: request.form.get(k, "") for k in ["nombre", "apellido", "email"]}
+        form = {k: request.form.get(k, "") for k in ["nombre", "apellido", "email", "nombre_usuario"]}
         if request.form.get("contrasena") != request.form.get("contrasena2"):
             return render_template("registro.html",
                                    error="Las contraseñas no coinciden.", form=form)
         ctrl = AuthController()
         resultado = ctrl.registrar({
             "nombre": form["nombre"], "apellido": form["apellido"],
-            "email": form["email"], "contrasena": request.form.get("contrasena")
+            "email": form["email"], "nombre_usuario": form["nombre_usuario"],
+            "contrasena": request.form.get("contrasena")
         })
         if resultado["ok"]:
             return redirect(url_for("login", exito="Cuenta creada. Podés iniciar sesión."))

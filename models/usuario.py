@@ -14,12 +14,14 @@ class Usuario:
     """
 
     def __init__(self, id: int = None, nombre: str = "", apellido: str = "",
-                 email: str = "", contrasena: str = "", foto_perfil: str = None,
-                 fecha_nac: str = None, dias_aviso: int = 7, activo: bool = True):
+                 email: str = "", nombre_usuario: str = "", contrasena: str = "",
+                 foto_perfil: str = None, fecha_nac: str = None,
+                 dias_aviso: int = 7, activo: bool = True):
         self._id = id
         self._nombre = nombre
         self._apellido = apellido
         self._email = email
+        self._nombre_usuario = nombre_usuario
         self._contrasena = contrasena
         self._foto_perfil = foto_perfil
         self._fecha_nac = fecha_nac
@@ -42,6 +44,10 @@ class Usuario:
     @property
     def email(self) -> str:
         return self._email
+
+    @property
+    def nombre_usuario(self) -> str:
+        return self._nombre_usuario
 
     @property
     def contrasena(self) -> str:
@@ -79,6 +85,14 @@ class Usuario:
         if len(valor) > 50:
             raise ErrorValidacion("El apellido no puede superar los 50 caracteres.")
         self._apellido = valor.strip()
+
+    @nombre_usuario.setter
+    def nombre_usuario(self, valor: str):
+        if not valor or not valor.strip():
+            raise ErrorValidacion("El nombre de usuario es obligatorio.")
+        if len(valor) > 30:
+            raise ErrorValidacion("El nombre de usuario no puede superar los 30 caracteres.")
+        self._nombre_usuario = valor.strip()
 
     @email.setter
     def email(self, valor: str):
