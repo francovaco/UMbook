@@ -43,6 +43,11 @@ Abrí el navegador en `http://127.0.0.1:5000`
 
 ## Casos de uso implementados
 
+### CU-01 — Registrarse en el sistema
+### CU-03 - Buscar usuario
+### CU-12 - Comentar fotos
+
+
 ### CU-02 — Editar perfil
 Acceso: barra superior → avatar → **Editar perfil**
 
