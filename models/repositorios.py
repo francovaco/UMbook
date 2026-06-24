@@ -143,3 +143,136 @@ class RepositorioComentario:
             contenido=row["contenido"],
             fecha_creacion=row["fecha_creacion"]
         )
+
+
+class RepositorioGrupo:
+    """
+    Repositorio para Grupo y GrupoPermiso.
+    Responsabilidad: acceso a datos de grupos, miembros y permisos.
+    Utilizado por CU-08 (gestionar grupos) y CU-09 (configurar permisos).
+    """
+
+    def __init__(self):
+        self._db = Persistencia().obtener_conexion()
+
+    # ── Grupos ──
+
+    def obtener(self, grupo_id: int):
+        from models.entidades import Grupo
+        row = self._db.execute(
+            "SELECT * FROM grupo WHERE id = ?", (grupo_id,)
+        ).fetchone()
+        if not row:
+            raise ErrorNegocio(f"No existe el grupo con id {grupo_id}.")
+        return self._fila_a_grupo(row)
+
+    def listar_de_usuario(self, propietario_id: int) -> list:
+        rows = self._db.execute(
+            "SELECT * FROM grupo WHERE propietario = ? ORDER BY nombre",
+            (propietario_id,)
+        ).fetchall()
+        return [self._fila_a_grupo(r) for r in rows]
+
+    def crear(self, propietario_id: int, nombre: str):
+        from models.entidades import Grupo
+        if not nombre or not nombre.strip():
+            raise ErrorNegocio("El nombre del grupo es obligatorio.")
+        cursor = self._db.execute(
+            "INSERT INTO grupo (propietario, nombre) VALUES (?, ?)",
+            (propietario_id, nombre.strip())
+        )
+        self._db.commit()
+        # Crear fila de permisos vacía asociada al grupo
+        self._db.execute(
+            "INSERT INTO grupo_permiso (grupo_id) VALUES (?)",
+            (cursor.lastrowid,)
+        )
+        self._db.commit()
+        return self.obtener(cursor.lastrowid)
+
+    def renombrar(self, grupo_id: int, propietario_id: int, nuevo_nombre: str):
+        grupo = self.obtener(grupo_id)
+        if grupo.propietario != propietario_id:
+            raise ErrorNegocio("No tenés permiso para editar este grupo.")
+        if not nuevo_nombre or not nuevo_nombre.strip():
+            raise ErrorNegocio("El nombre del grupo es obligatorio.")
+        self._db.execute(
+            "UPDATE grupo SET nombre = ? WHERE id = ?",
+            (nuevo_nombre.strip(), grupo_id)
+        )
+        self._db.commit()
+
+    def eliminar(self, grupo_id: int, propietario_id: int):
+        grupo = self.obtener(grupo_id)
+        if grupo.propietario != propietario_id:
+            raise ErrorNegocio("No tenés permiso para eliminar este grupo.")
+        # Eliminar en cascada: permisos y miembros primero
+        self._db.execute("DELETE FROM grupo_permiso WHERE grupo_id = ?", (grupo_id,))
+        self._db.execute("DELETE FROM grupo_miembro WHERE grupo_id = ?", (grupo_id,))
+        self._db.execute("DELETE FROM grupo WHERE id = ?", (grupo_id,))
+        self._db.commit()
+
+    # ── Miembros ──
+
+    def obtener_miembros_ids(self, grupo_id: int) -> list:
+        rows = self._db.execute(
+            "SELECT usuario_id FROM grupo_miembro WHERE grupo_id = ?", (grupo_id,)
+        ).fetchall()
+        return [r["usuario_id"] for r in rows]
+
+    def actualizar_miembros(self, grupo_id: int, propietario_id: int,
+                            nuevos_ids: list):
+        """Reemplaza la lista de miembros del grupo con los IDs recibidos."""
+        grupo = self.obtener(grupo_id)
+        if grupo.propietario != propietario_id:
+            raise ErrorNegocio("No tenés permiso para modificar este grupo.")
+        self._db.execute(
+            "DELETE FROM grupo_miembro WHERE grupo_id = ?", (grupo_id,)
+        )
+        for uid in nuevos_ids:
+            self._db.execute(
+                "INSERT OR IGNORE INTO grupo_miembro (grupo_id, usuario_id) VALUES (?,?)",
+                (grupo_id, uid)
+            )
+        self._db.commit()
+
+    # ── Permisos ──
+
+    def obtener_permisos(self, grupo_id: int):
+        from models.entidades import GrupoPermiso
+        row = self._db.execute(
+            "SELECT * FROM grupo_permiso WHERE grupo_id = ?", (grupo_id,)
+        ).fetchone()
+        if not row:
+            return GrupoPermiso(grupo_id=grupo_id)
+        return GrupoPermiso(
+            grupo_id=row["grupo_id"],
+            ver_albumes=bool(row["ver_albumes"]),
+            comentar_fotos=bool(row["comentar_fotos"]),
+            escribir_muro=bool(row["escribir_muro"])
+        )
+
+    def guardar_permisos(self, permisos):
+        self._db.execute(
+            """INSERT INTO grupo_permiso (grupo_id, ver_albumes, comentar_fotos, escribir_muro)
+               VALUES (?,?,?,?)
+               ON CONFLICT(grupo_id) DO UPDATE SET
+                 ver_albumes    = excluded.ver_albumes,
+                 comentar_fotos = excluded.comentar_fotos,
+                 escribir_muro  = excluded.escribir_muro""",
+            (permisos.grupo_id, int(permisos.ver_albumes),
+             int(permisos.comentar_fotos), int(permisos.escribir_muro))
+        )
+        self._db.commit()
+
+    # ── Helpers ──
+
+    def _fila_a_grupo(self, row):
+        from models.entidades import Grupo
+        miembros = self.obtener_miembros_ids(row["id"])
+        return Grupo(
+            id=row["id"],
+            propietario=row["propietario"],
+            nombre=row["nombre"],
+            miembros=miembros
+        )

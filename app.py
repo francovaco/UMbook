@@ -14,13 +14,15 @@ from infrastructure.persistencia import Persistencia
 from infrastructure.seguridad import Seguridad
 from models.gestion_usuarios import GestionUsuarios
 from models.repositorios import (RepositorioAmistad, RepositorioFoto,
-                                  RepositorioComentario)
+                                  RepositorioComentario, RepositorioGrupo)
 from models.usuario import Usuario
 from models.entidades import Amistad, Foto, Comentario
 from controllers.auth_controller import AuthController
 from controllers.perfil_controller import PerfilController
 from controllers.eliminar_amigo_controller import EliminarAmigoController
 from controllers.moderar_comentario_controller import ModerarComentarioController
+from controllers.grupos_controller import GruposController
+from controllers.admin_controller import AdminController
 
 # ── Inicialización ──
 app = Flask(__name__)
@@ -59,6 +61,13 @@ def inicializar_datos_demo():
     u5 = gestion.guardar(Usuario(nombre="Camila", apellido="Torres",
         email="ctorr@um.edu.ar", contrasena=seg.hashear_contrasena("1234"),
         fecha_nac="2001-12-01"))
+
+    # ── Usuario administrador ──
+    u_admin = gestion.guardar(Usuario(nombre="Admin", apellido="UMBook",
+        email="admin@um.edu.ar", contrasena=seg.hashear_contrasena("admin123"),
+        fecha_nac="1990-01-01"))
+    db.execute("UPDATE usuario SET es_admin = 1, habilitado = 1 WHERE id = ?", (u_admin.id,))
+    db.commit()
 
     # ── Amistades de Valentina (u1) ──
     # Valentina tiene 4 amigos → CU-06 muestra lista con varios para eliminar
@@ -125,6 +134,24 @@ def inicializar_datos_demo():
     repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto5.id,
                                 contenido="Qué orgullo! Lo hicieron genial 👏"))
 
+    # ── Grupos demo de Valentina (u1) — CU-08 / CU-09 ──
+    repo_grupo = RepositorioGrupo()
+
+    g1 = repo_grupo.crear(u1.id, "Familia")
+    repo_grupo.actualizar_miembros(g1.id, u1.id, [u2.id, u3.id])
+    from models.entidades import GrupoPermiso
+    repo_grupo.guardar_permisos(GrupoPermiso(grupo_id=g1.id,
+                                             ver_albumes=True,
+                                             comentar_fotos=True,
+                                             escribir_muro=True))
+
+    g2 = repo_grupo.crear(u1.id, "Compañeros")
+    repo_grupo.actualizar_miembros(g2.id, u1.id, [u4.id, u5.id])
+    repo_grupo.guardar_permisos(GrupoPermiso(grupo_id=g2.id,
+                                             ver_albumes=True,
+                                             comentar_fotos=False,
+                                             escribir_muro=False))
+
 
 
 def login_requerido(f):
@@ -160,9 +187,18 @@ def login():
         resultado = ctrl.login(request.form["email"], request.form["contrasena"])
         if resultado["ok"]:
             u = resultado["usuario"]
+            # CU-18: verificar que la cuenta no está deshabilitada
+            db = Persistencia().obtener_conexion()
+            row = db.execute(
+                "SELECT habilitado, es_admin FROM usuario WHERE id = ?", (u.id,)
+            ).fetchone()
+            if row and not row["habilitado"]:
+                return render_template("login.html",
+                                       error="Tu cuenta está deshabilitada. Contactá al administrador.")
             session["usuario_id"] = u.id
             session["nombre"] = u.nombre
             session["apellido"] = u.apellido
+            session["es_admin"] = bool(row["es_admin"]) if row else False
             return redirect(url_for("home"))
         return render_template("login.html", error=resultado["mensaje"])
 
@@ -382,13 +418,153 @@ def agregar_foto_demo():
     return redirect(url_for("mis_fotos"))
 
 
+# ══════════════════════════════════════════════
+# CU-08 / CU-09 — GRUPOS Y PERMISOS
+# ══════════════════════════════════════════════
+
+@app.route("/grupos")
+@login_requerido
+def grupos():
+    ctrl = GruposController()
+    resultado = ctrl.listar_grupos(session["usuario_id"])
+    exito = request.args.get("exito")
+    error = request.args.get("error")
+    return render_template("grupos.html",
+                           grupos=resultado.get("grupos", []),
+                           amigos=resultado.get("amigos", []),
+                           exito=exito, error=error)
+
+@app.route("/grupos/crear", methods=["POST"])
+@login_requerido
+def crear_grupo():
+    ctrl = GruposController()
+    resultado = ctrl.crear_grupo(session["usuario_id"], request.form.get("nombre", ""))
+    if resultado["ok"]:
+        return redirect(url_for("grupos", exito=resultado["mensaje"]))
+    return redirect(url_for("grupos", error=resultado["mensaje"]))
+
+@app.route("/grupos/<int:grupo_id>/renombrar", methods=["POST"])
+@login_requerido
+def renombrar_grupo(grupo_id):
+    ctrl = GruposController()
+    resultado = ctrl.renombrar_grupo(session["usuario_id"], grupo_id,
+                                     request.form.get("nombre", ""))
+    if resultado["ok"]:
+        return redirect(url_for("grupos", exito=resultado["mensaje"]))
+    return redirect(url_for("grupos", error=resultado["mensaje"]))
+
+@app.route("/grupos/<int:grupo_id>/eliminar", methods=["POST"])
+@login_requerido
+def eliminar_grupo(grupo_id):
+    ctrl = GruposController()
+    resultado = ctrl.eliminar_grupo(session["usuario_id"], grupo_id)
+    if resultado["ok"]:
+        return redirect(url_for("grupos", exito=resultado["mensaje"]))
+    return redirect(url_for("grupos", error=resultado["mensaje"]))
+
+@app.route("/grupos/<int:grupo_id>/miembros", methods=["POST"])
+@login_requerido
+def actualizar_miembros(grupo_id):
+    # Los checkboxes envían lista de IDs; si ninguno está marcado, getlist devuelve []
+    ids_raw = request.form.getlist("miembro_ids")
+    amigo_ids = [int(i) for i in ids_raw if i.isdigit()]
+    ctrl = GruposController()
+    resultado = ctrl.actualizar_miembros(session["usuario_id"], grupo_id, amigo_ids)
+    if resultado["ok"]:
+        return redirect(url_for("grupos", exito=resultado["mensaje"]))
+    return redirect(url_for("grupos", error=resultado["mensaje"]))
+
+@app.route("/grupos/<int:grupo_id>/permisos", methods=["POST"])
+@login_requerido
+def configurar_permisos(grupo_id):
+    ctrl = GruposController()
+    resultado = ctrl.configurar_permisos(
+        propietario_id=session["usuario_id"],
+        grupo_id=grupo_id,
+        ver_albumes="ver_albumes" in request.form,
+        comentar_fotos="comentar_fotos" in request.form,
+        escribir_muro="escribir_muro" in request.form,
+    )
+    if resultado["ok"]:
+        return redirect(url_for("grupos", exito=resultado["mensaje"]))
+    return redirect(url_for("grupos", error=resultado["mensaje"]))
+
+
+# ══════════════════════════════════════════════
+# CU-18 / CU-19 — PANEL DE ADMINISTRACIÓN
+# ══════════════════════════════════════════════
+
+def admin_requerido(f):
+    from functools import wraps
+    @wraps(f)
+    def decorador(*args, **kwargs):
+        if not session.get("es_admin"):
+            flash("Acceso denegado.", "error")
+            return redirect(url_for("home"))
+        return f(*args, **kwargs)
+    return decorador
+
+@app.route("/admin")
+@login_requerido
+@admin_requerido
+def admin():
+    ctrl = AdminController()
+    res_usuarios = ctrl.listar_usuarios(session["usuario_id"])
+    res_comentarios = ctrl.listar_comentarios(session["usuario_id"])
+    exito = request.args.get("exito")
+    error = request.args.get("error")
+    return render_template("admin.html",
+                           usuarios=res_usuarios.get("usuarios", []),
+                           comentarios=res_comentarios.get("comentarios", []),
+                           exito=exito, error=error)
+
+@app.route("/admin/deshabilitar", methods=["POST"])
+@login_requerido
+@admin_requerido
+def deshabilitar_usuario():
+    usuario_id = request.form.get("usuario_id")
+    if not usuario_id or not usuario_id.isdigit():
+        return redirect(url_for("admin", error="ID inválido."))
+    ctrl = AdminController()
+    resultado = ctrl.deshabilitar_usuario(session["usuario_id"], int(usuario_id))
+    if resultado["ok"]:
+        return redirect(url_for("admin", exito=resultado["mensaje"]))
+    return redirect(url_for("admin", error=resultado["mensaje"]))
+
+@app.route("/admin/habilitar", methods=["POST"])
+@login_requerido
+@admin_requerido
+def habilitar_usuario():
+    usuario_id = request.form.get("usuario_id")
+    if not usuario_id or not usuario_id.isdigit():
+        return redirect(url_for("admin", error="ID inválido."))
+    ctrl = AdminController()
+    resultado = ctrl.habilitar_usuario(session["usuario_id"], int(usuario_id))
+    if resultado["ok"]:
+        return redirect(url_for("admin", exito=resultado["mensaje"]))
+    return redirect(url_for("admin", error=resultado["mensaje"]))
+
+@app.route("/admin/comentario/eliminar", methods=["POST"])
+@login_requerido
+@admin_requerido
+def admin_eliminar_comentario():
+    comentario_id = request.form.get("comentario_id")
+    if not comentario_id or not comentario_id.isdigit():
+        return redirect(url_for("admin", error="ID de comentario inválido."))
+    ctrl = AdminController()
+    resultado = ctrl.eliminar_comentario_inapropiado(session["usuario_id"], int(comentario_id))
+    if resultado["ok"]:
+        return redirect(url_for("admin", exito=resultado["mensaje"]))
+    return redirect(url_for("admin", error=resultado["mensaje"]))
+
+
 if __name__ == "__main__":
     print("\n" + "="*60)
     print("  UMBook — Servidor iniciado")
-    print("  Abrí http://127.0.0.1:5000 en tu navegador")
+    print("  Abrí http://127.0.0.1:9000 en tu navegador")
     print("  Usuarios demo:")
     print("    vrodr@um.edu.ar  / 1234  (Valentina)")
     print("    mdiaz@um.edu.ar  / 1234  (Martín)")
     print("    lfern@um.edu.ar  / 1234  (Lucía)")
     print("="*60 + "\n")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=9000)
