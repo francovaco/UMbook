@@ -79,8 +79,38 @@ class Persistencia:
                 operacion  TEXT    NOT NULL,
                 resultado  TEXT    NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS grupo (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                propietario  INTEGER NOT NULL REFERENCES usuario(id),
+                nombre       TEXT    NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS grupo_miembro (
+                grupo_id    INTEGER NOT NULL REFERENCES grupo(id),
+                usuario_id  INTEGER NOT NULL REFERENCES usuario(id),
+                PRIMARY KEY (grupo_id, usuario_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS grupo_permiso (
+                grupo_id        INTEGER PRIMARY KEY REFERENCES grupo(id),
+                ver_albumes     INTEGER NOT NULL DEFAULT 0,
+                comentar_fotos  INTEGER NOT NULL DEFAULT 0,
+                escribir_muro   INTEGER NOT NULL DEFAULT 0
+            );
         """)
         self._conexion.commit()
+        # Migraciones para columnas que pueden no existir en BDs previas
+        for sql in [
+            "ALTER TABLE usuario ADD COLUMN habilitado INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE usuario ADD COLUMN es_admin   INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE comentario ADD COLUMN eliminado_por_admin INTEGER NOT NULL DEFAULT 0",
+        ]:
+            try:
+                cursor.execute(sql)
+                self._conexion.commit()
+            except Exception:
+                pass  # La columna ya existe
 
     def obtener_conexion(self) -> sqlite3.Connection:
         if self._conexion is None:

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block titulo %}Grupos y permisos — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:760px;">
+
+  <div class="breadcrumb">
+    <a href="{{ url_for('home') }}">Inicio</a>
+    <span>›</span>
+    <span>Grupos y permisos</span>
+  </div>
+
+  {% if exito %}
+  <div class="alerta alerta-exito">✓ {{ exito }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="alerta alerta-error">⚠ {{ error }}</div>
+  {% endif %}
+
+  <!-- ── Crear grupo ── -->
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h2 style="font-size:17px;font-weight:700;color:var(--azul);margin-bottom:14px;">
+      Crear nuevo grupo
+    </h2>
+    <form method="POST" action="{{ url_for('crear_grupo') }}"
+          style="display:flex;gap:10px;align-items:flex-end;">
+      <div class="campo" style="flex:1;margin-bottom:0;">
+        <label class="etiqueta" for="nombre-grupo">Nombre del grupo</label>
+        <input type="text" id="nombre-grupo" name="nombre" class="input"
+               placeholder="Ej: Familia, Trabajo, Compañeros…"
+               maxlength="60" required>
+      </div>
+      <button type="submit" class="btn btn-primario">+ Crear</button>
+    </form>
+  </div>
+
+  <!-- ── Lista de grupos ── -->
+  {% if grupos %}
+    {% for item in grupos %}
+    <div class="tarjeta" style="margin-bottom:16px;">
+
+      <!-- Encabezado del grupo -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--gris-borde);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:hsl({{ loop.index * 63 % 360 }},55%,45%);
+                      display:flex;align-items:center;justify-content:center;
+                      color:white;font-weight:700;font-size:15px;">
+            {{ item.grupo.nombre[0]|upper }}
+          </div>
+          <div>
+            <strong style="font-size:15px;">{{ item.grupo.nombre }}</strong>
+            <div style="font-size:12px;color:var(--gris-texto);">
+              {{ item.miembros|length }} miembro{% if item.miembros|length != 1 %}s{% endif %}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secundario" style="font-size:12px;padding:5px 10px;"
+                  onclick="abrirModal('modal-editar-{{ item.grupo.id }}')">✏ Editar</button>
+          <button class="btn btn-peligro" style="font-size:12px;padding:5px 10px;"
+                  onclick="abrirModal('modal-eliminar-{{ item.grupo.id }}')">🗑 Eliminar</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <!-- Miembros -->
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--gris-texto);
+                    text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+            Miembros
+          </p>
+          {% if amigos %}
+          <form method="POST"
+                action="{{ url_for('actualizar_miembros', grupo_id=item.grupo.id) }}">
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+              {% for amigo in amigos %}
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" name="miembro_ids" value="{{ amigo.id }}"
+                  {% if amigo.id in item.grupo.miembros %}checked{% endif %}>
+                <div class="avatar-chico"
+                     style="background:hsl({{ loop.index * 47 % 360 }},55%,45%);
+                            width:24px;height:24px;font-size:10px;">
+                  {{ amigo.nombre[0]|upper }}{{ amigo.apellido[0]|upper }}
+                </div>
+                {{ amigo.nombre }} {{ amigo.apellido }}
+              </label>
+              {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-secundario"
+                    style="font-size:12px;padding:5px 12px;">
+              Guardar miembros
+            </button>
+          </form>
+          {% else %}
+          <p style="font-size:13px;color:var(--gris-texto);">
+            No tenés amigos para asignar.
+          </p>
+          {% endif %}
+        </div>
+
+        <!-- Permisos -->
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--gris-texto);
+                    text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+            Permisos
+          </p>
+          <form method="POST"
+                action="{{ url_for('configurar_permisos', grupo_id=item.grupo.id) }}">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" name="ver_albumes"
+                  {% if item.permisos.ver_albumes %}checked{% endif %}>
+                🖼 Ver álbumes
+              </label>
+
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" name="comentar_fotos"
+                  {% if item.permisos.comentar_fotos %}checked{% endif %}>
+                💬 Comentar fotos
+              </label>
+
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" name="escribir_muro"
+                  {% if item.permisos.escribir_muro %}checked{% endif %}>
+                📝 Escribir en el muro
+              </label>
+
+            </div>
+            <button type="submit" class="btn btn-primario"
+                    style="font-size:12px;padding:5px 12px;">
+              Guardar permisos
+            </button>
+          </form>
+
+          {% if not item.permisos.ver_albumes and not item.permisos.comentar_fotos and not item.permisos.escribir_muro %}
+          <p style="font-size:11px;color:#f59e0b;margin-top:8px;">
+            ⚠ Sin permisos — los miembros no pueden realizar acciones.
+          </p>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal editar nombre -->
+    <div class="modal-overlay" id="modal-editar-{{ item.grupo.id }}">
+      <div class="modal">
+        <h3>Editar nombre del grupo</h3>
+        <form method="POST"
+              action="{{ url_for('renombrar_grupo', grupo_id=item.grupo.id) }}">
+          <div class="campo">
+            <label class="etiqueta">Nuevo nombre</label>
+            <input type="text" name="nombre" class="input"
+                   value="{{ item.grupo.nombre }}" maxlength="60" required>
+          </div>
+          <div class="modal-acciones">
+            <button type="button" class="btn btn-secundario"
+                    onclick="cerrarModal('modal-editar-{{ item.grupo.id }}')">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primario">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal eliminar grupo -->
+    <div class="modal-overlay" id="modal-eliminar-{{ item.grupo.id }}">
+      <div class="modal">
+        <h3>Eliminar grupo</h3>
+        <p>
+          ¿Querés eliminar el grupo <strong>{{ item.grupo.nombre }}</strong>?
+          Sus permisos asociados también serán eliminados.
+        </p>
+        <div class="modal-acciones">
+          <button type="button" class="btn btn-secundario"
+                  onclick="cerrarModal('modal-eliminar-{{ item.grupo.id }}')">
+            Cancelar
+          </button>
+          <form method="POST"
+                action="{{ url_for('eliminar_grupo', grupo_id=item.grupo.id) }}"
+                style="display:inline;">
+            <button type="submit" class="btn btn-peligro">Eliminar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  {% else %}
+  <div class="tarjeta">
+    <div class="vacio">
+      <div style="font-size:40px;">👥</div>
+      <p>No tenés grupos creados todavía.</p>
+      <p style="font-size:13px;color:var(--gris-texto);">
+        Creá un grupo arriba para organizar a tus amigos y configurar sus permisos.
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

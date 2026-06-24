@@ -149,3 +149,95 @@ class Comentario:
 
     def __repr__(self) -> str:
         return f"Comentario(id={self._id}, autor={self._autor_id}, foto={self._foto_id})"
+
+
+class Grupo:
+    """
+    Representa un grupo de amigos creado por un usuario (CU-08).
+    El propietario puede asignarle miembros y configurar sus permisos (CU-09).
+    """
+
+    def __init__(self, id: int = None, propietario: int = None, nombre: str = "",
+                 miembros: list = None):
+        self._id = id
+        self._propietario = propietario
+        self._nombre = nombre
+        self._miembros = miembros or []   # lista de usuario_id
+
+    @property
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def propietario(self) -> int:
+        return self._propietario
+
+    @property
+    def nombre(self) -> str:
+        return self._nombre
+
+    @nombre.setter
+    def nombre(self, valor: str):
+        self._nombre = valor.strip()
+
+    @property
+    def miembros(self) -> list:
+        return list(self._miembros)
+
+    def agregar_miembro(self, usuario_id: int):
+        if usuario_id not in self._miembros:
+            self._miembros.append(usuario_id)
+
+    def quitar_miembro(self, usuario_id: int):
+        self._miembros = [m for m in self._miembros if m != usuario_id]
+
+    def __repr__(self) -> str:
+        return f"Grupo(id={self._id}, nombre={self._nombre}, propietario={self._propietario})"
+
+
+class GrupoPermiso:
+    """
+    Representa los permisos configurados para un grupo (CU-09).
+    Define qué acciones pueden realizar los miembros del grupo
+    en el sitio del propietario.
+    """
+
+    def __init__(self, grupo_id: int = None, ver_albumes: bool = False,
+                 comentar_fotos: bool = False, escribir_muro: bool = False):
+        self._grupo_id = grupo_id
+        self._ver_albumes = ver_albumes
+        self._comentar_fotos = comentar_fotos
+        self._escribir_muro = escribir_muro
+
+    @property
+    def grupo_id(self) -> int:
+        return self._grupo_id
+
+    @property
+    def ver_albumes(self) -> bool:
+        return self._ver_albumes
+
+    @ver_albumes.setter
+    def ver_albumes(self, valor: bool):
+        self._ver_albumes = valor
+
+    @property
+    def comentar_fotos(self) -> bool:
+        return self._comentar_fotos
+
+    @comentar_fotos.setter
+    def comentar_fotos(self, valor: bool):
+        self._comentar_fotos = valor
+
+    @property
+    def escribir_muro(self) -> bool:
+        return self._escribir_muro
+
+    @escribir_muro.setter
+    def escribir_muro(self, valor: bool):
+        self._escribir_muro = valor
+
+    def __repr__(self) -> str:
+        return (f"GrupoPermiso(grupo={self._grupo_id}, "
+                f"ver={self._ver_albumes}, comentar={self._comentar_fotos}, "
+                f"muro={self._escribir_muro})")
