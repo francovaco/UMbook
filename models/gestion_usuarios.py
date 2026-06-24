@@ -47,6 +47,17 @@ class GestionUsuarios:
             ).fetchone()
         return row is None
 
+    def buscar(self, termino: str) -> list:
+        """Busca usuarios por nombre o apellido (búsqueda parcial)."""
+        t = f"%{termino.strip()}%"
+        rows = self._db.execute(
+            """SELECT * FROM usuario
+               WHERE (nombre LIKE ? OR apellido LIKE ?)
+               AND habilitado = 1""",
+            (t, t)
+        ).fetchall()
+        return [self._fila_a_usuario(r) for r in rows]
+
     def nombre_usuario_disponible(self, nombre_usuario: str, excluir_id: int = None) -> bool:
         """Verifica que el nombre de usuario no esté registrado por otro usuario."""
         if excluir_id:

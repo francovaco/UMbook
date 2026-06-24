@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titulo %}Buscar usuarios — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:640px;">
+  <div class="tarjeta">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">Buscar usuarios</h2>
+
+    <form method="GET" action="{{ url_for('buscar_usuarios') }}" style="display:flex;gap:8px;margin-bottom:20px;">
+      <input type="text" name="termino" value="{{ termino }}"
+             placeholder="Ingresá un nombre o apellido"
+             style="flex:1;" autofocus>
+      <button type="submit" class="btn btn-primario">Buscar</button>
+    </form>
+
+    {% if exito %}
+    <div class="alerta alerta-exito">{{ exito }}</div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alerta alerta-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    {% if resultados is not none %}
+      {% if resultados|length == 0 %}
+      <p style="color:var(--gris-texto);text-align:center;padding:24px 0;">
+        No se encontraron usuarios con ese nombre o apellido.
+      </p>
+      {% else %}
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;">
+        {% for item in resultados %}
+        <li style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="avatar-header" style="cursor:default;">
+              {{ item.usuario.nombre[0]|upper }}{{ item.usuario.apellido[0]|upper }}
+            </div>
+            <span style="font-weight:600;">{{ item.usuario.nombre }} {{ item.usuario.apellido }}</span>
+          </div>
+          {% if item.ya_es_amigo %}
+          <span style="font-size:13px;color:var(--gris-texto);">Ya son amigos</span>
+          {% else %}
+          <form method="POST" action="{{ url_for('agregar_amigo') }}" style="margin:0;">
+            <input type="hidden" name="amigo_id" value="{{ item.usuario.id }}">
+            <input type="hidden" name="termino" value="{{ termino }}">
+            <button type="submit" class="btn btn-primario" style="font-size:13px;padding:6px 14px;">
+              Agregar amigo
+            </button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

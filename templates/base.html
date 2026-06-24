@@ -19,6 +19,7 @@
   <nav class="header-nav">
     <a href="{{ url_for('home') }}" {% if request.endpoint=='home' %}class="activo"{% endif %}>Inicio</a>
     <a href="{{ url_for('amigos') }}" {% if request.endpoint=='amigos' %}class="activo"{% endif %}>Amigos</a>
+    <a href="{{ url_for('buscar_usuarios') }}" {% if request.endpoint=='buscar_usuarios' %}class="activo"{% endif %}>Buscar</a>
     <a href="{{ url_for('mis_fotos') }}" {% if request.endpoint in ['mis_fotos','detalle_foto'] %}class="activo"{% endif %}>Álbumes</a>
     <a href="{{ url_for('grupos') }}" {% if request.endpoint in ['grupos'] %}class="activo"{% endif %}>Grupos</a>
     {% if session.es_admin %}

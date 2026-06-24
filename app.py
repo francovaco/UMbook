@@ -23,6 +23,7 @@ from controllers.eliminar_amigo_controller import EliminarAmigoController
 from controllers.moderar_comentario_controller import ModerarComentarioController
 from controllers.grupos_controller import GruposController
 from controllers.admin_controller import AdminController
+from controllers.buscar_usuario_controller import BuscarUsuarioController
 
 # ── Inicialización ──
 app = Flask(__name__)
@@ -240,6 +241,40 @@ def logout():
 @login_requerido
 def home():
     return render_template("home.html")
+
+# ══════════════════════════════════════════════
+# CU-03 — BUSCAR USUARIOS
+# ══════════════════════════════════════════════
+
+@app.route("/buscar")
+@login_requerido
+def buscar_usuarios():
+    termino = request.args.get("termino", "")
+    exito = request.args.get("exito")
+    if not termino:
+        return render_template("buscar.html", resultados=None, termino="", exito=exito)
+    ctrl = BuscarUsuarioController()
+    resultado = ctrl.buscar(session["usuario_id"], termino)
+    return render_template("buscar.html",
+                           resultados=resultado.get("resultados", []),
+                           termino=resultado.get("termino", termino),
+                           error=resultado.get("mensaje") if not resultado["ok"] else None,
+                           exito=exito)
+
+
+@app.route("/amigos/agregar", methods=["POST"])
+@login_requerido
+def agregar_amigo():
+    amigo_id = request.form.get("amigo_id")
+    termino = request.form.get("termino", "")
+    if not amigo_id or not amigo_id.isdigit():
+        return redirect(url_for("buscar_usuarios", termino=termino))
+    ctrl = BuscarUsuarioController()
+    resultado = ctrl.agregar_amigo(session["usuario_id"], int(amigo_id))
+    if resultado["ok"]:
+        return redirect(url_for("buscar_usuarios", termino=termino, exito=resultado["mensaje"]))
+    return redirect(url_for("buscar_usuarios", termino=termino))
+
 
 # ── PERFIL ──
 @app.route("/perfil")
