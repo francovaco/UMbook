@@ -93,14 +93,20 @@ class PerfilController:
                 raise ErrorNegocio("El email ya está registrado por otro usuario.")
 
         if "foto_perfil" in datos and datos["foto_perfil"]:
-            self._validar_foto(datos["foto_perfil"])
+            tamano = datos.get("foto_perfil_bytes")
+            self._validar_foto(datos["foto_perfil"], tamano_bytes=tamano)
 
         if "dias_aviso" in datos and datos["dias_aviso"] is not None:
             dias = datos["dias_aviso"]
             if not isinstance(dias, int) or dias < 1 or dias > 30:
                 raise ErrorValidacion("Los días de aviso deben ser un número entero entre 1 y 30.")
 
-    def _validar_foto(self, nombre_archivo: str):
-        """Valida formato de la foto de perfil (RE-03)."""
+    def _validar_foto(self, nombre_archivo: str, tamano_bytes: int = None):
+        """
+        Valida formato y tamaño de la foto de perfil.
+        RE-03: JPG o PNG, máximo 5MB.
+        """
         if not any(nombre_archivo.lower().endswith(ext) for ext in self.EXTENSIONES_FOTO):
             raise ErrorValidacion("La foto debe ser JPG o PNG.")
+        if tamano_bytes is not None and tamano_bytes > self.TAMANO_MAX_FOTO_MB * 1024 * 1024:
+            raise ErrorValidacion(f"La foto no puede superar los {self.TAMANO_MAX_FOTO_MB}MB.")

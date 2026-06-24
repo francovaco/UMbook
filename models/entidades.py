@@ -86,16 +86,24 @@ class Foto:
 class Comentario:
     """
     Representa un comentario publicado en una foto.
+    Incluye soporte para moderación por parte del propietario (CU-13)
+    y del administrador (CU-19).
     """
 
     def __init__(self, id: int = None, autor_id: int = None,
                  foto_id: int = None, contenido: str = "",
-                 fecha_creacion: str = None):
+                 fecha_creacion: str = None,
+                 eliminado_por_admin: bool = False,
+                 aviso_eliminacion: str = None):
         self._id = id
         self._autor_id = autor_id
         self._foto_id = foto_id
         self._contenido = contenido
         self._fecha_creacion = fecha_creacion or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # RE-CO03: registra si fue eliminado por administrador (CU-19)
+        self._eliminado_por_admin = eliminado_por_admin
+        # Aviso visible para todos cuando el admin elimina (CU-19)
+        self._aviso_eliminacion = aviso_eliminacion
 
     @property
     def id(self) -> int:
@@ -116,6 +124,28 @@ class Comentario:
     @property
     def fecha_creacion(self) -> str:
         return self._fecha_creacion
+
+    @property
+    def eliminado_por_admin(self) -> bool:
+        return self._eliminado_por_admin
+
+    @eliminado_por_admin.setter
+    def eliminado_por_admin(self, valor: bool):
+        self._eliminado_por_admin = valor
+
+    @property
+    def aviso_eliminacion(self) -> str:
+        return self._aviso_eliminacion
+
+    @aviso_eliminacion.setter
+    def aviso_eliminacion(self, valor: str):
+        self._aviso_eliminacion = valor
+
+    def texto_visible(self) -> str:
+        """Retorna el texto a mostrar: aviso si fue eliminado por admin, contenido si no."""
+        if self._eliminado_por_admin and self._aviso_eliminacion:
+            return self._aviso_eliminacion
+        return self._contenido
 
     def __repr__(self) -> str:
         return f"Comentario(id={self._id}, autor={self._autor_id}, foto={self._foto_id})"

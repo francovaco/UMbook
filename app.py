@@ -43,29 +43,88 @@ def inicializar_datos_demo():
     repo_foto = RepositorioFoto()
     repo_com = RepositorioComentario()
 
+    # ── Usuarios ──
     u1 = gestion.guardar(Usuario(nombre="Valentina", apellido="Rodriguez",
-        email="vrodr@um.edu.ar", contrasena=seg.hashear_contrasena("1234"), dias_aviso=7))
+        email="vrodr@um.edu.ar", contrasena=seg.hashear_contrasena("1234"),
+        dias_aviso=7, fecha_nac="2001-03-15"))
     u2 = gestion.guardar(Usuario(nombre="Martín", apellido="Díaz",
-        email="mdiaz@um.edu.ar", contrasena=seg.hashear_contrasena("1234")))
+        email="mdiaz@um.edu.ar", contrasena=seg.hashear_contrasena("1234"),
+        fecha_nac="2000-11-20"))
     u3 = gestion.guardar(Usuario(nombre="Lucía", apellido="Fernández",
-        email="lfern@um.edu.ar", contrasena=seg.hashear_contrasena("1234")))
+        email="lfern@um.edu.ar", contrasena=seg.hashear_contrasena("1234"),
+        fecha_nac="2001-07-08"))
+    u4 = gestion.guardar(Usuario(nombre="Santiago", apellido="Molina",
+        email="smoli@um.edu.ar", contrasena=seg.hashear_contrasena("1234"),
+        fecha_nac="2000-05-22"))
+    u5 = gestion.guardar(Usuario(nombre="Camila", apellido="Torres",
+        email="ctorr@um.edu.ar", contrasena=seg.hashear_contrasena("1234"),
+        fecha_nac="2001-12-01"))
 
+    # ── Amistades de Valentina (u1) ──
+    # Valentina tiene 4 amigos → CU-06 muestra lista con varios para eliminar
     repo_amistad.guardar(Amistad(usuario_origen=u1.id, usuario_destino=u2.id))
     repo_amistad.guardar(Amistad(usuario_origen=u1.id, usuario_destino=u3.id))
+    repo_amistad.guardar(Amistad(usuario_origen=u1.id, usuario_destino=u4.id))
+    repo_amistad.guardar(Amistad(usuario_origen=u1.id, usuario_destino=u5.id))
 
-    db.execute("INSERT INTO album (propietario, nombre, fecha_creacion) VALUES (?,?,?)",
-               (u1.id, "Fotos UM", "2026-01-15"))
-    db.commit()
-    album_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    # ── Amistades de Martín (u2) ──
+    repo_amistad.guardar(Amistad(usuario_origen=u2.id, usuario_destino=u3.id))
+    repo_amistad.guardar(Amistad(usuario_origen=u2.id, usuario_destino=u4.id))
 
-    foto = repo_foto.guardar(Foto(propietario=u1.id, album_id=album_id,
-                                  url_imagen="egresados_2026.jpg"))
-    repo_com.guardar(Comentario(autor_id=u2.id, foto_id=foto.id,
-                                contenido="¡Qué buena foto! Los echo de menos a todos 😁"))
-    repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto.id,
-                                contenido="Ese día fue genial. ¡Repetimos! 🎉"))
-    repo_com.guardar(Comentario(autor_id=u2.id, foto_id=foto.id,
-                                contenido="Me encanta esta foto 📸"))
+    def crear_album(propietario_id, nombre, fecha):
+        db.execute("INSERT INTO album (propietario, nombre, fecha_creacion) VALUES (?,?,?)",
+                   (propietario_id, nombre, fecha))
+        db.commit()
+        return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    # ── Álbumes y fotos de Valentina ──
+    # Álbum 1: varios comentarios de distintos amigos → ideal para CU-13
+    alb1 = crear_album(u1.id, "Egresados 2025", "2025-12-10")
+    foto1 = repo_foto.guardar(Foto(propietario=u1.id, album_id=alb1,
+                                   url_imagen="egresados_fiesta.jpg"))
+    repo_com.guardar(Comentario(autor_id=u2.id, foto_id=foto1.id,
+                                contenido="¡Qué noche tan épica! Los voy a extrañar 🎓"))
+    repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto1.id,
+                                contenido="No puedo creer que ya terminamos. Fue todo un viaje 🥹"))
+    repo_com.guardar(Comentario(autor_id=u4.id, foto_id=foto1.id,
+                                contenido="Me encanta esta foto, salimos todos perfectos 😄"))
+    repo_com.guardar(Comentario(autor_id=u5.id, foto_id=foto1.id,
+                                contenido="Inolvidable. ¡Repetimos pronto! 🙌"))
+
+    foto2 = repo_foto.guardar(Foto(propietario=u1.id, album_id=alb1,
+                                   url_imagen="egresados_salon.jpg"))
+    repo_com.guardar(Comentario(autor_id=u2.id, foto_id=foto2.id,
+                                contenido="El salón quedó hermoso esa noche ✨"))
+    repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto2.id,
+                                contenido="Qué recuerdos! Ya quiero que sea el de cuarto año 🎉"))
+
+    # Álbum 2: fotos del campus → más comentarios para moderar
+    alb2 = crear_album(u1.id, "Campus UM 2026", "2026-03-05")
+    foto3 = repo_foto.guardar(Foto(propietario=u1.id, album_id=alb2,
+                                   url_imagen="campus_primavera.jpg"))
+    repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto3.id,
+                                contenido="El campus en primavera es lo más 🌸"))
+    repo_com.guardar(Comentario(autor_id=u4.id, foto_id=foto3.id,
+                                contenido="Qué buena foto! Me la mandás?"))
+    repo_com.guardar(Comentario(autor_id=u2.id, foto_id=foto3.id,
+                                contenido="Yo quiero ir ahí el finde, me avisan!"))
+
+    foto4 = repo_foto.guardar(Foto(propietario=u1.id, album_id=alb2,
+                                   url_imagen="biblioteca_um.jpg"))
+    repo_com.guardar(Comentario(autor_id=u5.id, foto_id=foto4.id,
+                                contenido="Ahí pasé todas mis noches de parciales 📚"))
+    repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto4.id,
+                                contenido="La biblioteca nueva está increíble"))
+
+    # ── Álbum de Martín (u2) con comentarios de Valentina ──
+    alb3 = crear_album(u2.id, "Proyecto Final", "2026-05-20")
+    foto5 = repo_foto.guardar(Foto(propietario=u2.id, album_id=alb3,
+                                   url_imagen="proyecto_presentacion.jpg"))
+    repo_com.guardar(Comentario(autor_id=u1.id, foto_id=foto5.id,
+                                contenido="¡Felicitaciones Martín! Se los merecen 🏆"))
+    repo_com.guardar(Comentario(autor_id=u3.id, foto_id=foto5.id,
+                                contenido="Qué orgullo! Lo hicieron genial 👏"))
+
 
 
 def login_requerido(f):
@@ -181,26 +240,35 @@ def editar_perfil():
             except ValueError:
                 pass
 
-        # Foto de perfil
+        # Foto de perfil — la validación de formato y tamaño la hace el controller
         archivo = request.files.get("foto_perfil")
         if archivo and archivo.filename:
-            nombre_archivo = archivo.filename.lower()
-            if not (nombre_archivo.endswith(".jpg") or nombre_archivo.endswith(".jpeg")
-                    or nombre_archivo.endswith(".png")):
-                return render_template("editar_perfil.html", usuario=usuario,
-                                       error="La foto debe ser JPG o PNG.")
             contenido = archivo.read()
-            if len(contenido) > 5 * 1024 * 1024:
+            nombre_archivo = archivo.filename.lower()
+            # Pasar nombre y tamaño al controller para que valide (MVC correcto)
+            datos["foto_perfil"] = nombre_archivo
+            datos["foto_perfil_bytes"] = len(contenido)
+
+            ctrl = PerfilController()
+            resultado = ctrl.editar_perfil(session["usuario_id"], datos)
+
+            if not resultado["ok"]:
                 return render_template("editar_perfil.html", usuario=usuario,
-                                       error="La foto no puede superar los 5MB.")
-            ruta = os.path.join(os.path.dirname(__file__), "static", "fotos",
-                                f"user_{session['usuario_id']}{os.path.splitext(nombre_archivo)[1]}")
+                                       error=resultado["mensaje"])
+
+            # Solo guardar el archivo en disco si el controller aprobó
+            ext = os.path.splitext(nombre_archivo)[1]
+            nombre_guardado = f"user_{session['usuario_id']}{ext}"
+            ruta = os.path.join(os.path.dirname(__file__), "static", "fotos", nombre_guardado)
             with open(ruta, "wb") as f:
                 f.write(contenido)
-            datos["foto_perfil"] = f"user_{session['usuario_id']}{os.path.splitext(nombre_archivo)[1]}"
-
-        ctrl = PerfilController()
-        resultado = ctrl.editar_perfil(session["usuario_id"], datos)
+            # Actualizar la referencia correcta en el modelo
+            datos["foto_perfil"] = nombre_guardado
+            datos.pop("foto_perfil_bytes", None)
+            resultado = ctrl.editar_perfil(session["usuario_id"], datos)
+        else:
+            ctrl = PerfilController()
+            resultado = ctrl.editar_perfil(session["usuario_id"], datos)
 
         if resultado["ok"]:
             session["nombre"] = resultado["usuario"].nombre

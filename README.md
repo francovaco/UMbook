@@ -81,16 +81,19 @@ El sistema implementa el patrón **MVC** sobre una arquitectura en 4 capas:
 
 ```
 Capa de presentación (Vista)   →  templates/ (Flask)
-Capa de negocio  (Controlador)       →  controllers/
-Capa de datos  (Modelo)         →  models/
-Capa intermedia        →  infrastructure/ (seguridad, logs, errores)
+Capa de negocio  (Controlador) →  controllers/
+Capa de datos  (Modelo)        →  models/
+Capa intermedia                →  infrastructure/ (seguridad, logs, errores)
 ```
 
 ### Patrones de diseño aplicados
 
-- **MVC** — separación de vista, controlador y modelo en cada caso de uso.
-- **Singleton** — la conexión a la base de datos se gestiona como instancia única.
-- **Repository** — acceso a datos encapsulado en clases repositorio por entidad.
+| Patrón | Dónde |
+|--------|-------|
+| **MVC** | `templates/` (View) → `controllers/` (Controller) → `models/` (Model). Cada CU tiene su propia clase en cada capa. |
+| **Singleton** | `infrastructure/persistencia.py` — una única instancia de conexión a SQLite compartida por todo el sistema. |
+| **Repository** | `models/repositorios.py` — `RepositorioAmistad`, `RepositorioFoto` y `RepositorioComentario` encapsulan el acceso a datos por entidad. |
+| **Facade** | `models/gestion_usuarios.py` — `GestionUsuarios` oculta la complejidad de acceso a `Usuario` y es reutilizado por los tres controllers. |
 
 ---
 
@@ -107,8 +110,8 @@ umbook/
 ├── models/
 │   ├── usuario.py                      ← Entidad Usuario
 │   ├── entidades.py                    ← Amistad, Foto, Comentario
-│   ├── gestion_usuarios.py             ← Servicio de usuarios
-│   └── repositorios.py                 ← Acceso a datos
+│   ├── gestion_usuarios.py             ← Servicio de usuarios (Facade)
+│   └── repositorios.py                 ← Acceso a datos (Repository)
 ├── controllers/
 │   ├── auth_controller.py              ← Login y registro
 │   ├── perfil_controller.py            ← CU-02
