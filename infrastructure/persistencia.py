@@ -102,8 +102,9 @@ class Persistencia:
         self._conexion.commit()
         # Migraciones para columnas que pueden no existir en BDs previas
         for sql in [
-            "ALTER TABLE usuario ADD COLUMN habilitado INTEGER NOT NULL DEFAULT 1",
-            "ALTER TABLE usuario ADD COLUMN es_admin   INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE usuario ADD COLUMN habilitado     INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE usuario ADD COLUMN es_admin       INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE usuario ADD COLUMN nombre_usuario TEXT    NOT NULL DEFAULT ''",
             "ALTER TABLE comentario ADD COLUMN eliminado_por_admin INTEGER NOT NULL DEFAULT 0",
         ]:
             try:

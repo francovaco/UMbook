@@ -52,19 +52,51 @@
 
     {% if comentarios %}
       {% for c in comentarios %}
-      <div class="comentario-item">
+      <div class="comentario-item" id="comentario-{{ c.id }}">
         <div class="avatar-chico" style="width:38px;height:38px;font-size:14px;background:hsl({{ c.autor_id * 61 % 360 }},50%,45%);flex-shrink:0;">
-          {{ c.autor_id }}
+          {{ (autores[c.autor_id] if autores[c.autor_id] else '#')[0]|upper }}
         </div>
-        <div class="comentario-cuerpo">
-          <strong>Usuario #{{ c.autor_id }}</strong>
-          <p>{{ c.contenido }}</p>
-          <small>{{ c.fecha_creacion }}</small>
+        <div class="comentario-cuerpo" style="flex:1;">
+          <strong>{{ autores[c.autor_id] if autores[c.autor_id] else 'Usuario #' ~ c.autor_id }}</strong>
+
+          <!-- Modo lectura -->
+          <div id="texto-{{ c.id }}">
+            <p>{{ c.contenido }}</p>
+            <small>{{ c.fecha_creacion }}</small>
+          </div>
+
+          <!-- Modo edición (oculto por defecto) -->
+          {% if c.autor_id == session.usuario_id %}
+          <form id="form-editar-{{ c.id }}" method="POST" action="{{ url_for('editar_comentario') }}"
+                style="display:none;margin-top:8px;">
+            <input type="hidden" name="comentario_id" value="{{ c.id }}">
+            <input type="hidden" name="foto_id" value="{{ foto.id }}">
+            <textarea name="contenido" rows="2"
+                      style="width:100%;box-sizing:border-box;margin-bottom:6px;">{{ c.contenido }}</textarea>
+            <div style="display:flex;gap:6px;">
+              <button type="submit" class="btn btn-primario" style="font-size:12px;padding:4px 12px;">Guardar</button>
+              <button type="button" class="btn btn-secundario" style="font-size:12px;padding:4px 12px;"
+                      onclick="cancelarEdicion({{ c.id }})">Cancelar</button>
+            </div>
+          </form>
+          {% endif %}
         </div>
-        {% if es_propietario %}
-        <button class="btn-icono" onclick="confirmarEliminarComentario({{ c.id }}, {{ foto.id }})"
-                title="Eliminar" style="flex-shrink:0;color:var(--rojo);border-color:#FECACA;">🗑</button>
-        {% endif %}
+
+        <!-- Acciones -->
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+          {% if c.autor_id == session.usuario_id %}
+          <!-- 4a: Editar propio -->
+          <button class="btn-icono" onclick="activarEdicion({{ c.id }})"
+                  title="Editar" style="color:var(--azul);border-color:#BFDBFE;font-size:13px;">✏</button>
+          <!-- 4b: Eliminar propio -->
+          <button class="btn-icono" onclick="confirmarEliminarPropio({{ c.id }}, {{ foto.id }})"
+                  title="Eliminar mi comentario" style="color:var(--rojo);border-color:#FECACA;">🗑</button>
+          {% elif es_propietario %}
+          <!-- 4c: Dueño elimina comentario de otro (CU-13) -->
+          <button class="btn-icono" onclick="confirmarEliminarComentario({{ c.id }}, {{ foto.id }})"
+                  title="Eliminar" style="color:var(--rojo);border-color:#FECACA;">🗑</button>
+          {% endif %}
+        </div>
       </div>
       {% endfor %}
     {% else %}
@@ -72,10 +104,29 @@
         <p>Esta foto no tiene comentarios aún.</p>
       </div>
     {% endif %}
+
+    <!-- Formulario para publicar (flujo principal y flujo 2a) -->
+    <div style="margin-top:20px;border-top:1px solid var(--gris-borde);padding-top:16px;">
+      {% if puede_comentar %}
+      <form method="POST" action="{{ url_for('publicar_comentario') }}">
+        <input type="hidden" name="foto_id" value="{{ foto.id }}">
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <textarea name="contenido" rows="2" placeholder="Escribí un comentario…"
+                    style="flex:1;resize:vertical;" required></textarea>
+          <button type="submit" class="btn btn-primario" style="flex-shrink:0;">Comentar</button>
+        </div>
+      </form>
+      {% else %}
+      <p style="font-size:13px;color:var(--gris-texto);text-align:center;">
+        No tenés permiso para comentar en esta foto.
+      </p>
+      {% endif %}
+    </div>
   </div>
 
 </div>
 
+<!-- Modal eliminar comentario (CU-13: dueño de foto) -->
 <div class="modal-overlay" id="modal-comentario">
   <div class="modal">
     <h3>Eliminar comentario</h3>
@@ -90,6 +141,23 @@
     </div>
   </div>
 </div>
+
+<!-- Modal eliminar comentario propio (4b: autor) -->
+<div class="modal-overlay" id="modal-comentario-propio">
+  <div class="modal">
+    <h3>Eliminar tu comentario</h3>
+    <p>¿Querés eliminar tu comentario? No se puede deshacer.</p>
+    <div class="modal-acciones">
+      <button class="btn btn-secundario" onclick="cerrarModal('modal-comentario-propio')">Cancelar</button>
+      <form method="POST" action="{{ url_for('eliminar_comentario_autor') }}" id="form-comentario-propio" style="display:inline;">
+        <input type="hidden" name="comentario_id" id="input-propio-id">
+        <input type="hidden" name="foto_id" id="input-propio-foto-id">
+        <button type="submit" class="btn btn-peligro">Eliminar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 {% block scripts %}
 <script>
@@ -97,6 +165,19 @@ function confirmarEliminarComentario(comentarioId, fotoId) {
   document.getElementById('input-comentario-id').value = comentarioId;
   document.getElementById('input-foto-id').value = fotoId;
   abrirModal('modal-comentario');
+}
+function confirmarEliminarPropio(comentarioId, fotoId) {
+  document.getElementById('input-propio-id').value = comentarioId;
+  document.getElementById('input-propio-foto-id').value = fotoId;
+  abrirModal('modal-comentario-propio');
+}
+function activarEdicion(id) {
+  document.getElementById('texto-' + id).style.display = 'none';
+  document.getElementById('form-editar-' + id).style.display = 'block';
+}
+function cancelarEdicion(id) {
+  document.getElementById('texto-' + id).style.display = 'block';
+  document.getElementById('form-editar-' + id).style.display = 'none';
 }
 </script>
 {% endblock %}

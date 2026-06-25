@@ -131,6 +131,13 @@ class RepositorioComentario:
         self._db.commit()
         return self.obtener(cursor.lastrowid)
 
+    def actualizar(self, comentario_id: int, nuevo_contenido: str):
+        self._db.execute(
+            "UPDATE comentario SET contenido = ? WHERE id = ?",
+            (nuevo_contenido, comentario_id)
+        )
+        self._db.commit()
+
     def eliminar(self, comentario_id: int):
         self._db.execute("DELETE FROM comentario WHERE id = ?", (comentario_id,))
         self._db.commit()
