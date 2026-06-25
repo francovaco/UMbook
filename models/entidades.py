@@ -79,6 +79,10 @@ class Foto:
         """Verifica si un usuario es dueño de esta foto."""
         return self._propietario == usuario_id
 
+    def tienePermiso(self, idUsuario: int) -> bool:
+        """Verifica si el usuario es dueño de la foto. La verificación completa de grupos queda en el controller."""
+        return self._propietario == idUsuario
+
     def __repr__(self) -> str:
         return f"Foto(id={self._id}, propietario={self._propietario})"
 
@@ -140,6 +144,14 @@ class Comentario:
     @aviso_eliminacion.setter
     def aviso_eliminacion(self, valor: str):
         self._aviso_eliminacion = valor
+
+    def editar(self, texto: str):
+        """Actualiza el contenido en memoria. El controller persiste con el repo."""
+        self._contenido = texto.strip()
+
+    def eliminar(self):
+        """Marca la intención de eliminar. El controller ejecuta la eliminación física vía repo."""
+        pass
 
     def texto_visible(self) -> str:
         """Retorna el texto a mostrar: aviso si fue eliminado por admin, contenido si no."""

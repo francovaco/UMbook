@@ -16,7 +16,8 @@ class Usuario:
     def __init__(self, id: int = None, nombre: str = "", apellido: str = "",
                  email: str = "", nombre_usuario: str = "", contrasena: str = "",
                  foto_perfil: str = None, fecha_nac: str = None,
-                 dias_aviso: int = 7, activo: bool = True):
+                 dias_aviso: int = 7, activo: bool = True,
+                 fecha_registro: str = None):
         self._id = id
         self._nombre = nombre
         self._apellido = apellido
@@ -27,6 +28,7 @@ class Usuario:
         self._fecha_nac = fecha_nac
         self._dias_aviso = dias_aviso
         self._activo = activo
+        self._fecha_registro = fecha_registro
 
     # ── Getters ──
     @property
@@ -52,6 +54,10 @@ class Usuario:
     @property
     def contrasena(self) -> str:
         return self._contrasena
+
+    @contrasena.setter
+    def contrasena(self, valor: str):
+        self._contrasena = valor
 
     @property
     def foto_perfil(self) -> str:
@@ -117,6 +123,10 @@ class Usuario:
     @activo.setter
     def activo(self, valor: bool):
         self._activo = valor
+
+    @property
+    def fecha_registro(self) -> str:
+        return self._fecha_registro
 
     def __repr__(self) -> str:
         return f"Usuario(id={self._id}, nombre={self._nombre}, email={self._email})"
