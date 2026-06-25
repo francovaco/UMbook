@@ -47,7 +47,7 @@ class GestionUsuarios:
             ).fetchone()
         return row is None
 
-    def buscar(self, termino: str) -> list:
+    def buscarPorNombreApellido(self, termino: str) -> list:
         """Busca usuarios por nombre o apellido (búsqueda parcial)."""
         t = f"%{termino.strip()}%"
         rows = self._db.execute(
@@ -75,12 +75,13 @@ class GestionUsuarios:
         try:
             cursor = self._db.execute(
                 """INSERT INTO usuario (nombre, apellido, email, nombre_usuario,
-                   contrasena, foto_perfil, fecha_nac, dias_aviso, activo)
-                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                   contrasena, foto_perfil, fecha_nac, dias_aviso, activo, fecha_registro)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (usuario.nombre, usuario.apellido, usuario.email,
                  usuario.nombre_usuario, usuario.contrasena,
                  usuario.foto_perfil, usuario.fecha_nac,
-                 usuario.dias_aviso, 1 if usuario.activo else 0)
+                 usuario.dias_aviso, 1 if usuario.activo else 0,
+                 usuario.fecha_registro)
             )
             self._db.commit()
             return self.obtener_por_id(cursor.lastrowid)
@@ -112,5 +113,6 @@ class GestionUsuarios:
             foto_perfil=row["foto_perfil"],
             fecha_nac=row["fecha_nac"],
             dias_aviso=row["dias_aviso"],
-            activo=bool(row["activo"])
+            activo=bool(row["activo"]),
+            fecha_registro=row["fecha_registro"] if "fecha_registro" in row.keys() else None
         )

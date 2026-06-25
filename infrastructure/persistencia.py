@@ -105,6 +105,7 @@ class Persistencia:
             "ALTER TABLE usuario ADD COLUMN habilitado     INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE usuario ADD COLUMN es_admin       INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE usuario ADD COLUMN nombre_usuario TEXT    NOT NULL DEFAULT ''",
+            "ALTER TABLE usuario ADD COLUMN fecha_registro TEXT",
             "ALTER TABLE comentario ADD COLUMN eliminado_por_admin INTEGER NOT NULL DEFAULT 0",
         ]:
             try:

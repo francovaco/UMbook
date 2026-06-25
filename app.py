@@ -18,13 +18,14 @@ from models.repositorios import (RepositorioAmistad, RepositorioFoto,
 from models.usuario import Usuario
 from models.entidades import Amistad, Foto, Comentario
 from controllers.auth_controller import AuthController
+from controllers.registro_controller import RegistroController
 from controllers.perfil_controller import PerfilController
 from controllers.eliminar_amigo_controller import EliminarAmigoController
 from controllers.moderar_comentario_controller import ModerarComentarioController
 from controllers.grupos_controller import GruposController
 from controllers.admin_controller import AdminController
-from controllers.buscar_usuario_controller import BuscarUsuarioController
-from controllers.comentar_foto_controller import ComentarFotoController
+from controllers.busqueda_controller import BusquedaController
+from controllers.comentario_controller import ComentarioController
 
 # ── Inicialización ──
 app = Flask(__name__)
@@ -216,8 +217,8 @@ def registro():
         if request.form.get("contrasena") != request.form.get("contrasena2"):
             return render_template("registro.html",
                                    error="Las contraseñas no coinciden.", form=form)
-        ctrl = AuthController()
-        resultado = ctrl.registrar({
+        ctrl = RegistroController()
+        resultado = ctrl.registrarUsuario({
             "nombre": form["nombre"], "apellido": form["apellido"],
             "email": form["email"], "nombre_usuario": form["nombre_usuario"],
             "contrasena": request.form.get("contrasena")
@@ -254,8 +255,8 @@ def buscar_usuarios():
     exito = request.args.get("exito")
     if not termino:
         return render_template("buscar.html", resultados=None, termino="", exito=exito)
-    ctrl = BuscarUsuarioController()
-    resultado = ctrl.buscar(session["usuario_id"], termino)
+    ctrl = BusquedaController(session["usuario_id"])
+    resultado = ctrl.buscarUsuarios(termino)
     return render_template("buscar.html",
                            resultados=resultado.get("resultados", []),
                            termino=resultado.get("termino", termino),
@@ -270,8 +271,8 @@ def agregar_amigo():
     termino = request.form.get("termino", "")
     if not amigo_id or not amigo_id.isdigit():
         return redirect(url_for("buscar_usuarios", termino=termino))
-    ctrl = BuscarUsuarioController()
-    resultado = ctrl.agregar_amigo(session["usuario_id"], int(amigo_id))
+    ctrl = BusquedaController(session["usuario_id"])
+    resultado = ctrl.agregar_amigo(int(amigo_id))
     if resultado["ok"]:
         return redirect(url_for("buscar_usuarios", termino=termino, exito=resultado["mensaje"]))
     return redirect(url_for("buscar_usuarios", termino=termino))
@@ -410,8 +411,8 @@ def detalle_foto(foto_id):
     if not resultado["ok"]:
         return redirect(url_for("mis_fotos"))
 
-    ctrl_com = ComentarFotoController()
-    puede_comentar = ctrl_com.puede_comentar(session["usuario_id"], foto_id)
+    ctrl_com = ComentarioController(session["usuario_id"])
+    puede_comentar = ctrl_com.verificarPermiso(session["usuario_id"], foto_id)
 
     # Cargar nombres de autores para mostrar en template
     gestion = GestionUsuarios()
@@ -460,8 +461,8 @@ def publicar_comentario():
     contenido = request.form.get("contenido", "")
     if not foto_id:
         return redirect(url_for("mis_fotos"))
-    ctrl = ComentarFotoController()
-    resultado = ctrl.publicar(session["usuario_id"], int(foto_id), contenido)
+    ctrl = ComentarioController(session["usuario_id"])
+    resultado = ctrl.publicarComentario(int(foto_id), contenido)
     if resultado["ok"]:
         return redirect(url_for("detalle_foto", foto_id=foto_id,
                                 exito=resultado["mensaje"]))
@@ -477,8 +478,8 @@ def editar_comentario():
     nuevo_contenido = request.form.get("contenido", "")
     if not comentario_id or not foto_id:
         return redirect(url_for("mis_fotos"))
-    ctrl = ComentarFotoController()
-    resultado = ctrl.editar(session["usuario_id"], int(comentario_id), nuevo_contenido)
+    ctrl = ComentarioController(session["usuario_id"])
+    resultado = ctrl.editarComentario(int(comentario_id), nuevo_contenido)
     if resultado["ok"]:
         return redirect(url_for("detalle_foto", foto_id=foto_id,
                                 exito=resultado["mensaje"]))
@@ -493,8 +494,8 @@ def eliminar_comentario_autor():
     foto_id = request.form.get("foto_id")
     if not comentario_id or not foto_id:
         return redirect(url_for("mis_fotos"))
-    ctrl = ComentarFotoController()
-    resultado = ctrl.eliminar_propio(session["usuario_id"], int(comentario_id))
+    ctrl = ComentarioController(session["usuario_id"])
+    resultado = ctrl.eliminarComentario(int(comentario_id))
     if resultado["ok"]:
         return redirect(url_for("detalle_foto", foto_id=foto_id,
                                 exito=resultado["mensaje"]))
