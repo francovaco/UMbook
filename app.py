@@ -24,6 +24,7 @@ from controllers.moderar_comentario_controller import ModerarComentarioControlle
 from controllers.grupos_controller import GruposController
 from controllers.admin_controller import AdminController
 from controllers.buscar_usuario_controller import BuscarUsuarioController
+from controllers.comentar_foto_controller import ComentarFotoController
 
 # ── Inicialización ──
 app = Flask(__name__)
@@ -404,16 +405,33 @@ def mis_fotos():
 @app.route("/fotos/<int:foto_id>")
 @login_requerido
 def detalle_foto(foto_id):
-    ctrl = ModerarComentarioController()
-    resultado = ctrl.obtener_comentarios(session["usuario_id"], foto_id)
+    ctrl_mod = ModerarComentarioController()
+    resultado = ctrl_mod.obtener_comentarios(session["usuario_id"], foto_id)
     if not resultado["ok"]:
         return redirect(url_for("mis_fotos"))
+
+    ctrl_com = ComentarFotoController()
+    puede_comentar = ctrl_com.puede_comentar(session["usuario_id"], foto_id)
+
+    # Cargar nombres de autores para mostrar en template
+    gestion = GestionUsuarios()
+    autores = {}
+    for c in resultado["comentarios"]:
+        if c.autor_id not in autores:
+            try:
+                u = gestion.obtener_por_id(c.autor_id)
+                autores[c.autor_id] = f"{u.nombre} {u.apellido}"
+            except Exception:
+                autores[c.autor_id] = f"Usuario #{c.autor_id}"
+
     exito = request.args.get("exito")
     error = request.args.get("error")
     return render_template("detalle_foto.html",
                            foto=resultado["foto"],
                            comentarios=resultado["comentarios"],
                            es_propietario=resultado["es_propietario"],
+                           puede_comentar=puede_comentar,
+                           autores=autores,
                            exito=exito, error=error)
 
 
@@ -428,6 +446,55 @@ def eliminar_comentario():
     resultado = ctrl.eliminar_comentario(
         session["usuario_id"], int(foto_id), int(comentario_id)
     )
+    if resultado["ok"]:
+        return redirect(url_for("detalle_foto", foto_id=foto_id,
+                                exito=resultado["mensaje"]))
+    return redirect(url_for("detalle_foto", foto_id=foto_id,
+                            error=resultado["mensaje"]))
+
+
+@app.route("/comentarios/publicar", methods=["POST"])
+@login_requerido
+def publicar_comentario():
+    foto_id = request.form.get("foto_id")
+    contenido = request.form.get("contenido", "")
+    if not foto_id:
+        return redirect(url_for("mis_fotos"))
+    ctrl = ComentarFotoController()
+    resultado = ctrl.publicar(session["usuario_id"], int(foto_id), contenido)
+    if resultado["ok"]:
+        return redirect(url_for("detalle_foto", foto_id=foto_id,
+                                exito=resultado["mensaje"]))
+    return redirect(url_for("detalle_foto", foto_id=foto_id,
+                            error=resultado["mensaje"]))
+
+
+@app.route("/comentarios/editar", methods=["POST"])
+@login_requerido
+def editar_comentario():
+    comentario_id = request.form.get("comentario_id")
+    foto_id = request.form.get("foto_id")
+    nuevo_contenido = request.form.get("contenido", "")
+    if not comentario_id or not foto_id:
+        return redirect(url_for("mis_fotos"))
+    ctrl = ComentarFotoController()
+    resultado = ctrl.editar(session["usuario_id"], int(comentario_id), nuevo_contenido)
+    if resultado["ok"]:
+        return redirect(url_for("detalle_foto", foto_id=foto_id,
+                                exito=resultado["mensaje"]))
+    return redirect(url_for("detalle_foto", foto_id=foto_id,
+                            error=resultado["mensaje"]))
+
+
+@app.route("/comentarios/eliminar_autor", methods=["POST"])
+@login_requerido
+def eliminar_comentario_autor():
+    comentario_id = request.form.get("comentario_id")
+    foto_id = request.form.get("foto_id")
+    if not comentario_id or not foto_id:
+        return redirect(url_for("mis_fotos"))
+    ctrl = ComentarFotoController()
+    resultado = ctrl.eliminar_propio(session["usuario_id"], int(comentario_id))
     if resultado["ok"]:
         return redirect(url_for("detalle_foto", foto_id=foto_id,
                                 exito=resultado["mensaje"]))
