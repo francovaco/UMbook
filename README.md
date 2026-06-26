@@ -4,6 +4,7 @@
 
 **Franco Vaccarezza 63179** CU-02, CU-06 y CU-13
 **Jose Manuel Diez de Oñate 63151** CU-01, CU_03 y CU-12
+**Nicolás Bartolomeo Koninckx 63148** CU-08, CU-09 y CU-18
 
 ---
 
@@ -39,6 +40,7 @@ Abrí el navegador en `http://127.0.0.1:9000`
 | Valentina Rodriguez   | `vrodr@um.edu.ar`   | `1234`     |
 | Martín Díaz           | `mdiaz@um.edu.ar`   | `1234`     |
 | Lucía Fernández       | `lfern@um.edu.ar`   | `1234`     |
+| Admin UMBook          | `admin@um.edu.ar`   | `admin123` |
 
 ---
 
@@ -107,6 +109,38 @@ Validaciones implementadas:
 - Confirmación explícita antes de eliminar
 - Eliminación permanente sin posibilidad de recuperación
 
+### CU-08 — Gestionar grupos de amigos
+Acceso: barra superior → **Grupos**
+
+Permite al usuario crear grupos personalizados de amigos, asignarles miembros de su lista de amigos, renombrarlos y eliminarlos. Al eliminar un grupo, sus permisos asociados se eliminan en cascada.
+
+Validaciones implementadas:
+- El nombre del grupo es obligatorio
+- Solo se pueden asignar como miembros usuarios que sean amigos del propietario
+- Confirmación explícita antes de eliminar un grupo
+- Solo el propietario puede modificar o eliminar sus grupos
+
+### CU-09 — Configurar permisos por grupo
+Acceso: barra superior → **Grupos** (columna derecha de cada grupo)
+
+Permite al usuario definir qué acciones pueden realizar los miembros de cada grupo en su perfil: ver álbumes, comentar fotos y escribir en el muro. Si no se habilita ningún permiso, los miembros no podrán realizar acciones.
+
+Validaciones implementadas:
+- El grupo debe existir y pertenecer al usuario autenticado
+- Si no se selecciona ningún permiso, se muestra un aviso indicando que el grupo no tiene acciones habilitadas
+- Los permisos se aplican en tiempo real al momento de que un amigo intenta realizar una acción
+
+### CU-18 — Deshabilitar usuario
+Acceso: barra superior → **Admin** (solo visible para administradores)
+
+Permite al administrador deshabilitar la cuenta de un usuario, impidiendo que pueda iniciar sesión. El sistema solicita confirmación antes de ejecutar la acción. El administrador también puede rehabilitar cuentas deshabilitadas.
+
+Validaciones implementadas:
+- Solo usuarios con rol administrador pueden acceder al panel
+- El administrador no puede deshabilitar su propia cuenta
+- Confirmación explícita mediante modal antes de deshabilitar
+- Al intentar iniciar sesión, el usuario deshabilitado ve un mensaje explicativo
+
 ---
 
 ## Arquitectura
@@ -150,7 +184,9 @@ umbook/
 │   ├── auth_controller.py              ← Login y registro
 │   ├── perfil_controller.py            ← CU-02
 │   ├── eliminar_amigo_controller.py    ← CU-06
-│   └── moderar_comentario_controller.py← CU-13
+│   ├── moderar_comentario_controller.py← CU-13
+│   ├── grupos_controller.py            ← CU-08 y CU-09
+│   └── admin_controller.py             ← CU-18
 ├── templates/                          ← Vistas HTML
 └── static/css/umbook.css               ← Estilos
 ```
