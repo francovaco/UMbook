@@ -3,7 +3,9 @@
 **Proyecto:** Ingeniería de Software 2026.
 
 **Franco Vaccarezza 63179** CU-02, CU-06 y CU-13
+
 **Jose Manuel Diez de Oñate 63151** CU-01, CU_03 y CU-12
+
 **Nicolás Bartolomeo Koninckx 63148** CU-08, CU-09 y CU-18
 
 ---
