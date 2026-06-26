@@ -19,8 +19,9 @@
   <nav class="header-nav">
     <a href="{{ url_for('home') }}" {% if request.endpoint=='home' %}class="activo"{% endif %}>Inicio</a>
     <a href="{{ url_for('amigos') }}" {% if request.endpoint=='amigos' %}class="activo"{% endif %}>Amigos</a>
+    <a href="{{ url_for('solicitudes') }}" {% if request.endpoint=='solicitudes' %}class="activo"{% endif %}>Solicitudes{% if solicitudes_count %} <span style="background:#ef4444;color:white;border-radius:50%;font-size:11px;padding:1px 6px;margin-left:4px;">{{ solicitudes_count }}</span>{% endif %}</a>
     <a href="{{ url_for('buscar_usuarios') }}" {% if request.endpoint=='buscar_usuarios' %}class="activo"{% endif %}>Buscar</a>
-    <a href="{{ url_for('mis_fotos') }}" {% if request.endpoint in ['mis_fotos','detalle_foto'] %}class="activo"{% endif %}>Álbumes</a>
+    <a href="{{ url_for('albumes') }}" {% if request.endpoint in ['albumes','ver_album','detalle_foto'] %}class="activo"{% endif %}>Álbumes</a>
     <a href="{{ url_for('grupos') }}" {% if request.endpoint in ['grupos'] %}class="activo"{% endif %}>Grupos</a>
     {% if session.es_admin %}
     <a href="{{ url_for('admin') }}" {% if request.endpoint=='admin' %}class="activo"{% endif %} style="color:#fbbf24;">Admin</a>

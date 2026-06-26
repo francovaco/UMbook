@@ -26,6 +26,9 @@ from controllers.grupos_controller import GruposController
 from controllers.admin_controller import AdminController
 from controllers.busqueda_controller import BusquedaController
 from controllers.comentario_controller import ComentarioController
+from controllers.solicitud_amistad_controller import SolicitudAmistadController
+from controllers.sugerencias_amigos_controller import SugerenciasAmigosController
+from controllers.visibilidad_album_controller import VisibilidadAlbumController
 
 # ── Inicialización ──
 app = Flask(__name__)
@@ -167,6 +170,18 @@ def login_requerido(f):
     return decorador
 
 
+@app.context_processor
+def inject_solicitudes_count():
+    if "usuario_id" in session:
+        try:
+            from controllers.solicitud_amistad_controller import SolicitudAmistadController
+            ctrl = SolicitudAmistadController()
+            return dict(solicitudes_count=ctrl.contar_pendientes(session["usuario_id"]))
+        except Exception:
+            pass
+    return dict(solicitudes_count=0)
+
+
 # ══════════════════════════════════════════════
 # RUTAS DE AUTENTICACIÓN
 # ══════════════════════════════════════════════
@@ -275,7 +290,62 @@ def agregar_amigo():
     resultado = ctrl.agregar_amigo(int(amigo_id))
     if resultado["ok"]:
         return redirect(url_for("buscar_usuarios", termino=termino, exito=resultado["mensaje"]))
-    return redirect(url_for("buscar_usuarios", termino=termino))
+    return redirect(url_for("buscar_usuarios", termino=termino, error=resultado["mensaje"]))
+
+
+# ══════════════════════════════════════════════
+# CU-05 — SOLICITUDES DE AMISTAD
+# ══════════════════════════════════════════════
+
+@app.route("/solicitudes")
+@login_requerido
+def solicitudes():
+    ctrl = SolicitudAmistadController()
+    resultado = ctrl.listar_recibidas(session["usuario_id"])
+    exito = request.args.get("exito")
+    error = request.args.get("error")
+    return render_template("solicitudes.html",
+                           solicitudes=resultado.get("solicitudes", []),
+                           exito=exito, error=error)
+
+@app.route("/solicitudes/aceptar", methods=["POST"])
+@login_requerido
+def aceptar_solicitud():
+    solicitud_id = request.form.get("solicitud_id")
+    if not solicitud_id:
+        return redirect(url_for("solicitudes"))
+    ctrl = SolicitudAmistadController()
+    resultado = ctrl.aceptar_solicitud(session["usuario_id"], int(solicitud_id))
+    if resultado["ok"]:
+        return redirect(url_for("solicitudes", exito=resultado["mensaje"]))
+    return redirect(url_for("solicitudes", error=resultado["mensaje"]))
+
+@app.route("/solicitudes/rechazar", methods=["POST"])
+@login_requerido
+def rechazar_solicitud():
+    solicitud_id = request.form.get("solicitud_id")
+    if not solicitud_id:
+        return redirect(url_for("solicitudes"))
+    ctrl = SolicitudAmistadController()
+    resultado = ctrl.rechazar_solicitud(session["usuario_id"], int(solicitud_id))
+    if resultado["ok"]:
+        return redirect(url_for("solicitudes", exito=resultado["mensaje"]))
+    return redirect(url_for("solicitudes", error=resultado["mensaje"]))
+
+
+# ══════════════════════════════════════════════
+# CU-07 — SUGERENCIAS DE AMIGOS
+# ══════════════════════════════════════════════
+
+@app.route("/sugerencias")
+@login_requerido
+def sugerencias():
+    ctrl = SugerenciasAmigosController()
+    resultado = ctrl.obtener_sugerencias(session["usuario_id"])
+    exito = request.args.get("exito")
+    return render_template("sugerencias.html",
+                           sugerencias=resultado.get("sugerencias", []),
+                           exito=exito)
 
 
 # ── PERFIL ──
@@ -386,16 +456,57 @@ def eliminar_amigo():
 
 
 # ══════════════════════════════════════════════
-# CU-13 — MODERAR COMENTARIOS
+# CU-11 — ÁLBUMES Y VISIBILIDAD
 # ══════════════════════════════════════════════
 
-@app.route("/fotos")
+@app.route("/albumes")
 @login_requerido
-def mis_fotos():
+def albumes():
+    ctrl = VisibilidadAlbumController()
+    resultado = ctrl.listar_albumes(session["usuario_id"])
+    exito = request.args.get("exito")
+    error = request.args.get("error")
+    return render_template("albumes.html",
+                           albumes=resultado.get("albumes", []),
+                           grupos=resultado.get("grupos", []),
+                           exito=exito, error=error)
+
+@app.route("/albumes/crear", methods=["POST"])
+@login_requerido
+def crear_album():
+    nombre = request.form.get("nombre")
+    visibilidad = request.form.get("visibilidad", "AMIGOS")
+    grupo_id = request.form.get("grupo_id")
+    if grupo_id:
+        grupo_id = int(grupo_id)
+        
+    ctrl = VisibilidadAlbumController()
+    resultado = ctrl.crear_album(session["usuario_id"], nombre, visibilidad, grupo_id)
+    if resultado["ok"]:
+        return redirect(url_for("albumes", exito=resultado["mensaje"]))
+    return redirect(url_for("albumes", error=resultado["mensaje"]))
+
+@app.route("/albumes/<int:album_id>/visibilidad", methods=["POST"])
+@login_requerido
+def configurar_visibilidad(album_id):
+    visibilidad = request.form.get("visibilidad")
+    grupo_id = request.form.get("grupo_id")
+    if grupo_id:
+        grupo_id = int(grupo_id)
+        
+    ctrl = VisibilidadAlbumController()
+    resultado = ctrl.configurar_visibilidad(session["usuario_id"], album_id, visibilidad, grupo_id)
+    if resultado["ok"]:
+        return redirect(url_for("albumes", exito=resultado["mensaje"]))
+    return redirect(url_for("albumes", error=resultado["mensaje"]))
+
+@app.route("/albumes/<int:album_id>")
+@login_requerido
+def ver_album(album_id):
     repo = RepositorioFoto()
     db = Persistencia().obtener_conexion()
-    rows = db.execute("SELECT * FROM foto WHERE propietario = ?",
-                      (session["usuario_id"],)).fetchall()
+    rows = db.execute("SELECT * FROM foto WHERE album_id = ?",
+                      (album_id,)).fetchall()
     from models.entidades import Foto
     fotos = [Foto(id=r["id"], propietario=r["propietario"],
                   album_id=r["album_id"], url_imagen=r["url_imagen"],
@@ -403,13 +514,17 @@ def mis_fotos():
     return render_template("mis_fotos.html", fotos=fotos)
 
 
+# ══════════════════════════════════════════════
+# CU-13 — MODERAR COMENTARIOS
+# ══════════════════════════════════════════════
+
 @app.route("/fotos/<int:foto_id>")
 @login_requerido
 def detalle_foto(foto_id):
     ctrl_mod = ModerarComentarioController()
     resultado = ctrl_mod.obtener_comentarios(session["usuario_id"], foto_id)
     if not resultado["ok"]:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
 
     ctrl_com = ComentarioController(session["usuario_id"])
     puede_comentar = ctrl_com.verificarPermiso(session["usuario_id"], foto_id)
@@ -442,7 +557,7 @@ def eliminar_comentario():
     comentario_id = request.form.get("comentario_id")
     foto_id = request.form.get("foto_id")
     if not comentario_id or not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ModerarComentarioController()
     resultado = ctrl.eliminar_comentario(
         session["usuario_id"], int(foto_id), int(comentario_id)
@@ -460,7 +575,7 @@ def publicar_comentario():
     foto_id = request.form.get("foto_id")
     contenido = request.form.get("contenido", "")
     if not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ComentarioController(session["usuario_id"])
     resultado = ctrl.publicarComentario(int(foto_id), contenido)
     if resultado["ok"]:
@@ -477,7 +592,7 @@ def editar_comentario():
     foto_id = request.form.get("foto_id")
     nuevo_contenido = request.form.get("contenido", "")
     if not comentario_id or not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ComentarioController(session["usuario_id"])
     resultado = ctrl.editarComentario(int(comentario_id), nuevo_contenido)
     if resultado["ok"]:
@@ -493,7 +608,7 @@ def eliminar_comentario_autor():
     comentario_id = request.form.get("comentario_id")
     foto_id = request.form.get("foto_id")
     if not comentario_id or not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ComentarioController(session["usuario_id"])
     resultado = ctrl.eliminarComentario(int(comentario_id))
     if resultado["ok"]:
@@ -519,7 +634,7 @@ def agregar_foto_demo():
     repo_com = RepositorioComentario()
     repo_com.guardar(Comentario(autor_id=session["usuario_id"],
                                 foto_id=foto.id, contenido="Mi comentario de demo"))
-    return redirect(url_for("mis_fotos"))
+    return redirect(url_for("albumes"))
 
 
 # ══════════════════════════════════════════════
