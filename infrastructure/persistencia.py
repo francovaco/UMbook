@@ -98,6 +98,15 @@ class Persistencia:
                 comentar_fotos  INTEGER NOT NULL DEFAULT 0,
                 escribir_muro   INTEGER NOT NULL DEFAULT 0
             );
+
+            CREATE TABLE IF NOT EXISTS solicitud_amistad (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                emisor_id INTEGER NOT NULL REFERENCES usuario(id),
+                receptor_id INTEGER NOT NULL REFERENCES usuario(id),
+                estado TEXT NOT NULL DEFAULT 'PENDIENTE',
+                fecha_creacion TEXT NOT NULL,
+                UNIQUE(emisor_id, receptor_id)
+            );
         """)
         self._conexion.commit()
         # Migraciones para columnas que pueden no existir en BDs previas
@@ -107,6 +116,8 @@ class Persistencia:
             "ALTER TABLE usuario ADD COLUMN nombre_usuario TEXT    NOT NULL DEFAULT ''",
             "ALTER TABLE usuario ADD COLUMN fecha_registro TEXT",
             "ALTER TABLE comentario ADD COLUMN eliminado_por_admin INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE album ADD COLUMN visibilidad TEXT NOT NULL DEFAULT 'AMIGOS'",
+            "ALTER TABLE album ADD COLUMN grupo_id INTEGER REFERENCES grupo(id)",
         ]:
             try:
                 cursor.execute(sql)

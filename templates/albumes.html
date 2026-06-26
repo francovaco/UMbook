@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block titulo %}Álbumes — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:720px;">
+
+  <div class="breadcrumb">
+    <a href="{{ url_for('home') }}">Inicio</a>
+    <span>›</span>
+    <span>Álbumes</span>
+  </div>
+
+  {% if exito %}
+  <div class="alerta alerta-exito">{{ exito }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="alerta alerta-error">⚠ {{ error }}</div>
+  {% endif %}
+
+  <!-- Crear nuevo álbum -->
+  <div class="tarjeta" style="margin-bottom:20px;">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:14px;color:var(--azul);">Crear nuevo álbum</h2>
+    <form method="POST" action="{{ url_for('crear_album') }}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+      <div style="flex:1;min-width:180px;">
+        <label style="font-size:13px;font-weight:600;color:var(--gris-texto);display:block;margin-bottom:4px;">Nombre</label>
+        <input type="text" name="nombre" placeholder="Nombre del álbum" required style="width:100%;">
+      </div>
+      <div style="min-width:160px;">
+        <label style="font-size:13px;font-weight:600;color:var(--gris-texto);display:block;margin-bottom:4px;">Visibilidad</label>
+        <select name="visibilidad" id="crear-visibilidad" onchange="toggleGrupoCrear()" style="width:100%;padding:8px 10px;border:1px solid var(--borde);border-radius:8px;font-size:14px;">
+          <option value="AMIGOS">Amigos</option>
+          <option value="TODOS">Todos</option>
+          <option value="GRUPO">Grupo específico</option>
+          <option value="SOLO_YO">Solo yo</option>
+        </select>
+      </div>
+      <div id="crear-grupo-container" style="min-width:150px;display:none;">
+        <label style="font-size:13px;font-weight:600;color:var(--gris-texto);display:block;margin-bottom:4px;">Grupo</label>
+        <select name="grupo_id" style="width:100%;padding:8px 10px;border:1px solid var(--borde);border-radius:8px;font-size:14px;">
+          <option value="">Seleccionar...</option>
+          {% for g in grupos %}
+          <option value="{{ g.id }}">{{ g.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primario" style="padding:8px 18px;">Crear</button>
+    </form>
+  </div>
+
+  <!-- Lista de álbumes -->
+  <div class="tarjeta">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">Mis álbumes</h2>
+
+    {% if albumes|length == 0 %}
+    <div class="vacio">
+      <div style="font-size:40px;">🖼️</div>
+      <p>No tenés álbumes todavía.</p>
+    </div>
+    {% else %}
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for item in albumes %}
+      <div style="border:1px solid var(--borde);border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div>
+            <a href="{{ url_for('ver_album', album_id=item.album.id) }}" style="font-weight:600;font-size:15px;color:var(--azul);text-decoration:none;">
+              📁 {{ item.album.nombre }}
+            </a>
+            <div style="font-size:12px;color:var(--gris-texto);margin-top:2px;">
+              {{ item.cant_fotos }} foto{{ 's' if item.cant_fotos != 1 else '' }} · Creado {{ item.album.fecha_creacion }}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            {% if item.album.visibilidad == 'SOLO_YO' %}
+            <span style="font-size:12px;background:#f3f4f6;padding:3px 10px;border-radius:20px;">🔒 Solo yo</span>
+            {% elif item.album.visibilidad == 'AMIGOS' %}
+            <span style="font-size:12px;background:#dbeafe;padding:3px 10px;border-radius:20px;">👥 Amigos</span>
+            {% elif item.album.visibilidad == 'GRUPO' %}
+            <span style="font-size:12px;background:#fef3c7;padding:3px 10px;border-radius:20px;">👤 {{ item.grupo_nombre or 'Grupo' }}</span>
+            {% elif item.album.visibilidad == 'TODOS' %}
+            <span style="font-size:12px;background:#d1fae5;padding:3px 10px;border-radius:20px;">🌐 Todos</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Configurar visibilidad -->
+        <form method="POST" action="{{ url_for('configurar_visibilidad', album_id=item.album.id) }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select name="visibilidad" class="sel-visibilidad" data-album="{{ item.album.id }}" onchange="toggleGrupoEditar(this, '{{ item.album.id }}')" style="padding:6px 10px;border:1px solid var(--borde);border-radius:8px;font-size:13px;">
+            <option value="AMIGOS" {{ 'selected' if item.album.visibilidad == 'AMIGOS' }}>Amigos</option>
+            <option value="TODOS" {{ 'selected' if item.album.visibilidad == 'TODOS' }}>Todos</option>
+            <option value="GRUPO" {{ 'selected' if item.album.visibilidad == 'GRUPO' }}>Grupo específico</option>
+            <option value="SOLO_YO" {{ 'selected' if item.album.visibilidad == 'SOLO_YO' }}>Solo yo</option>
+          </select>
+          <div id="grupo-editar-{{ item.album.id }}" style="{{ '' if item.album.visibilidad == 'GRUPO' else 'display:none;' }}">
+            <select name="grupo_id" style="padding:6px 10px;border:1px solid var(--borde);border-radius:8px;font-size:13px;">
+              <option value="">Seleccionar...</option>
+              {% for g in grupos %}
+              <option value="{{ g.id }}" {{ 'selected' if item.album.grupo_id == g.id }}>{{ g.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primario" style="font-size:12px;padding:5px 12px;">Guardar</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleGrupoCrear() {
+  var sel = document.getElementById('crear-visibilidad');
+  var cont = document.getElementById('crear-grupo-container');
+  cont.style.display = sel.value === 'GRUPO' ? '' : 'none';
+}
+function toggleGrupoEditar(sel, albumId) {
+  var cont = document.getElementById('grupo-editar-' + albumId);
+  cont.style.display = sel.value === 'GRUPO' ? '' : 'none';
+}
+</script>
+{% endblock %}

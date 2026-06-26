@@ -37,12 +37,16 @@
           </div>
           {% if item.ya_es_amigo %}
           <span style="font-size:13px;color:var(--gris-texto);">Ya son amigos</span>
+          {% elif item.solicitud_enviada %}
+          <span style="font-size:13px;color:var(--gris-texto);font-style:italic;">Solicitud enviada</span>
+          {% elif item.solicitud_recibida %}
+          <span style="font-size:13px;color:#f59e0b;font-weight:600;">Te envió solicitud</span>
           {% else %}
           <form method="POST" action="{{ url_for('agregar_amigo') }}" style="margin:0;">
             <input type="hidden" name="amigo_id" value="{{ item.usuario.id }}">
             <input type="hidden" name="termino" value="{{ termino }}">
             <button type="submit" class="btn btn-primario" style="font-size:13px;padding:6px 14px;">
-              Agregar amigo
+              Enviar solicitud
             </button>
           </form>
           {% endif %}

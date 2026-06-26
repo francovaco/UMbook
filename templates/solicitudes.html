@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titulo %}Solicitudes de amistad — UMBook{% endblock %}
+{% block contenido %}
+<div class="contenedor" style="max-width:640px;">
+
+  <div class="breadcrumb">
+    <a href="{{ url_for('home') }}">Inicio</a>
+    <span>›</span>
+    <span>Solicitudes</span>
+  </div>
+
+  <div class="tarjeta">
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">Solicitudes de amistad</h2>
+
+    {% if exito %}
+    <div class="alerta alerta-exito">{{ exito }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="alerta alerta-error">⚠ {{ error }}</div>
+    {% endif %}
+
+    {% if solicitudes|length == 0 %}
+    <div class="vacio">
+      <div style="font-size:40px;">📬</div>
+      <p>No tenés solicitudes pendientes.</p>
+    </div>
+    {% else %}
+    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;">
+      {% for item in solicitudes %}
+      <li style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="avatar-header" style="cursor:default;">
+            {{ item.emisor.nombre[0]|upper }}{{ item.emisor.apellido[0]|upper }}
+          </div>
+          <div>
+            <span style="font-weight:600;">{{ item.emisor.nombre }} {{ item.emisor.apellido }}</span>
+            <div style="font-size:12px;color:var(--gris-texto);">{{ item.solicitud.fecha_creacion }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <form method="POST" action="{{ url_for('aceptar_solicitud') }}" style="margin:0;">
+            <input type="hidden" name="solicitud_id" value="{{ item.solicitud.id }}">
+            <button type="submit" class="btn btn-primario" style="font-size:13px;padding:6px 14px;">Aceptar</button>
+          </form>
+          <form method="POST" action="{{ url_for('rechazar_solicitud') }}" style="margin:0;">
+            <input type="hidden" name="solicitud_id" value="{{ item.solicitud.id }}">
+            <button type="submit" class="btn btn-peligro" style="font-size:13px;padding:6px 14px;">Rechazar</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

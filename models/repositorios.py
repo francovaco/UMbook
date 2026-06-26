@@ -3,7 +3,7 @@ Repositorios para Amistad, Foto y Comentario.
 Responsabilidad: acceso a datos para cada entidad.
 """
 
-from models.entidades import Amistad, Foto, Comentario
+from models.entidades import Amistad, Foto, Comentario, SolicitudAmistad, Album
 from infrastructure.persistencia import Persistencia
 from infrastructure.errores import ErrorNegocio, ErrorSistema
 from datetime import datetime
@@ -152,6 +152,77 @@ class RepositorioComentario:
         )
 
 
+class RepositorioAlbum:
+    """Repositorio para álbumes (CU-10, CU-11)."""
+
+    def __init__(self):
+        self._db = Persistencia().obtener_conexion()
+
+    def obtener(self, album_id):
+        from models.entidades import Album
+        row = self._db.execute("SELECT * FROM album WHERE id = ?", (album_id,)).fetchone()
+        if not row:
+            raise ErrorNegocio(f"No existe el álbum con id {album_id}.")
+        return self._fila_a_album(row)
+
+    def listar_de_usuario(self, propietario_id):
+        rows = self._db.execute(
+            "SELECT * FROM album WHERE propietario = ? ORDER BY fecha_creacion DESC",
+            (propietario_id,)
+        ).fetchall()
+        return [self._fila_a_album(r) for r in rows]
+
+    def crear(self, propietario_id, nombre, visibilidad="AMIGOS", grupo_id=None):
+        from models.entidades import Album
+        if not nombre or not nombre.strip():
+            raise ErrorNegocio("El nombre del álbum es obligatorio.")
+        cursor = self._db.execute(
+            "INSERT INTO album (propietario, nombre, fecha_creacion, visibilidad, grupo_id) VALUES (?,?,?,?,?)",
+            (propietario_id, nombre.strip(), datetime.now().strftime("%Y-%m-%d"),
+             visibilidad, grupo_id)
+        )
+        self._db.commit()
+        return self.obtener(cursor.lastrowid)
+
+    def actualizar_visibilidad(self, album_id, propietario_id, visibilidad, grupo_id=None):
+        from models.entidades import Album
+        album = self.obtener(album_id)
+        if album.propietario != propietario_id:
+            raise ErrorNegocio("No tenés permiso para modificar este álbum.")
+        if visibilidad not in Album.VISIBILIDADES:
+            raise ErrorNegocio(f"Visibilidad inválida: {visibilidad}.")
+        if visibilidad == Album.GRUPO and not grupo_id:
+            raise ErrorNegocio("Debés seleccionar un grupo para esta visibilidad.")
+        self._db.execute(
+            "UPDATE album SET visibilidad = ?, grupo_id = ? WHERE id = ?",
+            (visibilidad, grupo_id if visibilidad == Album.GRUPO else None, album_id)
+        )
+        self._db.commit()
+
+    def eliminar(self, album_id, propietario_id):
+        album = self.obtener(album_id)
+        if album.propietario != propietario_id:
+            raise ErrorNegocio("No tenés permiso para eliminar este álbum.")
+        self._db.execute("DELETE FROM foto WHERE album_id = ?", (album_id,))
+        self._db.execute("DELETE FROM album WHERE id = ?", (album_id,))
+        self._db.commit()
+
+    def contar_fotos(self, album_id):
+        row = self._db.execute("SELECT COUNT(*) FROM foto WHERE album_id = ?", (album_id,)).fetchone()
+        return row[0]
+
+    def _fila_a_album(self, row):
+        from models.entidades import Album
+        return Album(
+            id=row["id"],
+            propietario=row["propietario"],
+            nombre=row["nombre"],
+            fecha_creacion=row["fecha_creacion"],
+            visibilidad=row["visibilidad"] if "visibilidad" in row.keys() else "AMIGOS",
+            grupo_id=row["grupo_id"] if "grupo_id" in row.keys() else None
+        )
+
+
 class RepositorioGrupo:
     """
     Repositorio para Grupo y GrupoPermiso.
@@ -282,4 +353,78 @@ class RepositorioGrupo:
             propietario=row["propietario"],
             nombre=row["nombre"],
             miembros=miembros
+        )
+
+
+class RepositorioSolicitudAmistad:
+    """Repositorio para solicitudes de amistad (CU-05)."""
+
+    def __init__(self):
+        self._db = Persistencia().obtener_conexion()
+
+    def obtener(self, id):
+        row = self._db.execute("SELECT * FROM solicitud_amistad WHERE id = ?", (id,)).fetchone()
+        if not row:
+            raise ErrorNegocio(f"No existe la solicitud con id {id}.")
+        return self._fila_a_solicitud(row)
+
+    def obtener_entre(self, emisor_id, receptor_id):
+        row = self._db.execute(
+            "SELECT * FROM solicitud_amistad WHERE emisor_id = ? AND receptor_id = ? AND estado = 'PENDIENTE'",
+            (emisor_id, receptor_id)
+        ).fetchone()
+        return self._fila_a_solicitud(row) if row else None
+
+    def obtener_pendiente_entre(self, usuario_a, usuario_b):
+        """Busca solicitud pendiente en cualquier dirección."""
+        row = self._db.execute(
+            """SELECT * FROM solicitud_amistad
+               WHERE ((emisor_id=? AND receptor_id=?) OR (emisor_id=? AND receptor_id=?))
+               AND estado = 'PENDIENTE'""",
+            (usuario_a, usuario_b, usuario_b, usuario_a)
+        ).fetchone()
+        return self._fila_a_solicitud(row) if row else None
+
+    def listar_recibidas(self, receptor_id):
+        rows = self._db.execute(
+            "SELECT * FROM solicitud_amistad WHERE receptor_id = ? AND estado = 'PENDIENTE' ORDER BY fecha_creacion DESC",
+            (receptor_id,)
+        ).fetchall()
+        return [self._fila_a_solicitud(r) for r in rows]
+
+    def listar_enviadas(self, emisor_id):
+        rows = self._db.execute(
+            "SELECT * FROM solicitud_amistad WHERE emisor_id = ? AND estado = 'PENDIENTE' ORDER BY fecha_creacion DESC",
+            (emisor_id,)
+        ).fetchall()
+        return [self._fila_a_solicitud(r) for r in rows]
+
+    def contar_recibidas(self, receptor_id):
+        row = self._db.execute(
+            "SELECT COUNT(*) FROM solicitud_amistad WHERE receptor_id = ? AND estado = 'PENDIENTE'",
+            (receptor_id,)
+        ).fetchone()
+        return row[0]
+
+    def guardar(self, solicitud):
+        cursor = self._db.execute(
+            "INSERT INTO solicitud_amistad (emisor_id, receptor_id, estado, fecha_creacion) VALUES (?,?,?,?)",
+            (solicitud.emisor_id, solicitud.receptor_id, solicitud.estado,
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        self._db.commit()
+        return self.obtener(cursor.lastrowid)
+
+    def actualizar_estado(self, solicitud_id, nuevo_estado):
+        self._db.execute(
+            "UPDATE solicitud_amistad SET estado = ? WHERE id = ?",
+            (nuevo_estado, solicitud_id)
+        )
+        self._db.commit()
+
+    def _fila_a_solicitud(self, row):
+        return SolicitudAmistad(
+            id=row["id"], emisor_id=row["emisor_id"],
+            receptor_id=row["receptor_id"], estado=row["estado"],
+            fecha_creacion=row["fecha_creacion"]
         )

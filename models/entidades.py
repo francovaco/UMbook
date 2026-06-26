@@ -41,6 +41,53 @@ class Amistad:
         return f"Amistad(id={self._id}, origen={self._usuario_origen}, destino={self._usuario_destino})"
 
 
+class Album:
+    """Representa un álbum de fotos con configuración de visibilidad (CU-11)."""
+    SOLO_YO = "SOLO_YO"
+    AMIGOS = "AMIGOS"
+    GRUPO = "GRUPO"
+    TODOS = "TODOS"
+    VISIBILIDADES = [SOLO_YO, AMIGOS, GRUPO, TODOS]
+
+    def __init__(self, id=None, propietario=None, nombre="",
+                 fecha_creacion=None, visibilidad="AMIGOS", grupo_id=None):
+        self._id = id
+        self._propietario = propietario
+        self._nombre = nombre
+        self._fecha_creacion = fecha_creacion or datetime.now().strftime("%Y-%m-%d")
+        self._visibilidad = visibilidad
+        self._grupo_id = grupo_id
+
+    @property
+    def id(self): return self._id
+    @property
+    def propietario(self): return self._propietario
+    @property
+    def nombre(self): return self._nombre
+    @nombre.setter
+    def nombre(self, valor): self._nombre = valor.strip() if valor else ""
+    @property
+    def fecha_creacion(self): return self._fecha_creacion
+    @property
+    def visibilidad(self): return self._visibilidad
+    @visibilidad.setter
+    def visibilidad(self, valor):
+        if valor not in self.VISIBILIDADES:
+            from infrastructure.errores import ErrorValidacion
+            raise ErrorValidacion(f"Visibilidad inválida: {valor}. Opciones: {', '.join(self.VISIBILIDADES)}")
+        self._visibilidad = valor
+    @property
+    def grupo_id(self): return self._grupo_id
+    @grupo_id.setter
+    def grupo_id(self, valor): self._grupo_id = valor
+
+    def es_propietario(self, usuario_id):
+        return self._propietario == usuario_id
+
+    def __repr__(self):
+        return f"Album(id={self._id}, nombre={self._nombre}, visibilidad={self._visibilidad})"
+
+
 class Foto:
     """
     Representa una foto subida por un usuario en un álbum.
@@ -253,3 +300,34 @@ class GrupoPermiso:
         return (f"GrupoPermiso(grupo={self._grupo_id}, "
                 f"ver={self._ver_albumes}, comentar={self._comentar_fotos}, "
                 f"muro={self._escribir_muro})")
+
+
+class SolicitudAmistad:
+    """Representa una solicitud de amistad entre dos usuarios (CU-05)."""
+    PENDIENTE = "PENDIENTE"
+    ACEPTADA = "ACEPTADA"
+    RECHAZADA = "RECHAZADA"
+
+    def __init__(self, id=None, emisor_id=None, receptor_id=None,
+                 estado="PENDIENTE", fecha_creacion=None):
+        self._id = id
+        self._emisor_id = emisor_id
+        self._receptor_id = receptor_id
+        self._estado = estado
+        self._fecha_creacion = fecha_creacion or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
+    def id(self): return self._id
+    @property
+    def emisor_id(self): return self._emisor_id
+    @property
+    def receptor_id(self): return self._receptor_id
+    @property
+    def estado(self): return self._estado
+    @estado.setter
+    def estado(self, valor): self._estado = valor
+    @property
+    def fecha_creacion(self): return self._fecha_creacion
+
+    def __repr__(self):
+        return f"SolicitudAmistad(id={self._id}, emisor={self._emisor_id}, receptor={self._receptor_id}, estado={self._estado})"

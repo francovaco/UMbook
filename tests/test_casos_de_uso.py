@@ -11,6 +11,9 @@ from models.entidades import Amistad, Foto, Comentario
 from controllers.perfil_controller import PerfilController
 from controllers.eliminar_amigo_controller import EliminarAmigoController
 from controllers.moderar_comentario_controller import ModerarComentarioController
+from controllers.solicitud_amistad_controller import SolicitudAmistadController
+from controllers.sugerencias_amigos_controller import SugerenciasAmigosController
+from controllers.visibilidad_album_controller import VisibilidadAlbumController
 
 
 def setup():
@@ -149,6 +152,60 @@ def test_cu13_obtener_comentarios(ids):
     print("  ✓ CU-13 CP-03: Obtención de comentarios con flag propietario correcto")
 
 
+def test_cu05_enviar_y_aceptar_solicitud(ids):
+    ctrl = SolicitudAmistadController()
+    # u2 envía a u3
+    res1 = ctrl.enviar_solicitud(ids["u2_id"], ids["u3_id"])
+    assert res1["ok"] == True
+    # u3 acepta
+    pendientes = ctrl.listar_recibidas(ids["u3_id"])
+    sol_id = pendientes["solicitudes"][0]["solicitud"].id
+    res2 = ctrl.aceptar_solicitud(ids["u3_id"], sol_id)
+    assert res2["ok"] == True
+    print("  ✓ CU-05: Enviar y aceptar solicitud de amistad")
+
+def test_cu07_sugerencias_amigos():
+    # Setup específico para >2 amigos en común
+    gestion = GestionUsuarios()
+    u_a = gestion.guardar(Usuario(nombre="A", apellido="A", email="a@a.com", contrasena="1"))
+    u_b = gestion.guardar(Usuario(nombre="B", apellido="B", email="b@b.com", contrasena="1"))
+    u_c = gestion.guardar(Usuario(nombre="C", apellido="C", email="c@c.com", contrasena="1"))
+    u_d = gestion.guardar(Usuario(nombre="D", apellido="D", email="d@d.com", contrasena="1"))
+    u_e = gestion.guardar(Usuario(nombre="E", apellido="E", email="e@e.com", contrasena="1"))
+    
+    repo_am = RepositorioAmistad()
+    # a es amigo de c, d, e
+    repo_am.guardar(Amistad(usuario_origen=u_a.id, usuario_destino=u_c.id))
+    repo_am.guardar(Amistad(usuario_origen=u_a.id, usuario_destino=u_d.id))
+    repo_am.guardar(Amistad(usuario_origen=u_a.id, usuario_destino=u_e.id))
+    # b es amigo de c, d, e (3 amigos en común con A)
+    repo_am.guardar(Amistad(usuario_origen=u_b.id, usuario_destino=u_c.id))
+    repo_am.guardar(Amistad(usuario_origen=u_b.id, usuario_destino=u_d.id))
+    repo_am.guardar(Amistad(usuario_origen=u_b.id, usuario_destino=u_e.id))
+    
+    ctrl = SugerenciasAmigosController()
+    res = ctrl.obtener_sugerencias(u_a.id)
+    assert res["ok"] == True
+    # Debería sugerir a B porque tienen 3 en común
+    assert len(res["sugerencias"]) == 1
+    assert res["sugerencias"][0]["usuario"].id == u_b.id
+    assert res["sugerencias"][0]["amigos_en_comun"] == 3
+    print("  ✓ CU-07: Sugerir amigos con >2 en común")
+
+def test_cu11_configurar_visibilidad(ids):
+    ctrl = VisibilidadAlbumController()
+    res1 = ctrl.crear_album(ids["u1_id"], "Nuevo Album", "SOLO_YO")
+    assert res1["ok"] == True
+    album_id = res1["album"].id
+    
+    res2 = ctrl.configurar_visibilidad(ids["u1_id"], album_id, "TODOS")
+    assert res2["ok"] == True
+    
+    res3 = ctrl.configurar_visibilidad(ids["u1_id"], album_id, "INVÁLIDO")
+    assert res3["ok"] == False
+    print("  ✓ CU-11: Crear álbum y cambiar visibilidad")
+
+
 if __name__ == "__main__":
     print("\n" + "="*60)
     print("  PRUEBAS AUTOMATIZADAS — UMBook")
@@ -171,6 +228,11 @@ if __name__ == "__main__":
     test_cu13_eliminar_comentario_propietario(ids)
     test_cu13_eliminar_no_propietario(ids)
     test_cu13_obtener_comentarios(ids)
+    
+    print("\n  Nuevos Casos de Uso (CU-05, CU-07, CU-11):")
+    test_cu05_enviar_y_aceptar_solicitud(ids)
+    test_cu07_sugerencias_amigos()
+    test_cu11_configurar_visibilidad(ids)
 
     print("\n" + "="*60)
     print("  TODAS LAS PRUEBAS PASARON ✓")
