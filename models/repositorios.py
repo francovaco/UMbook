@@ -408,12 +408,18 @@ class RepositorioSolicitudAmistad:
 
     def guardar(self, solicitud):
         cursor = self._db.execute(
-            "INSERT INTO solicitud_amistad (emisor_id, receptor_id, estado, fecha_creacion) VALUES (?,?,?,?)",
+            """INSERT INTO solicitud_amistad (emisor_id, receptor_id, estado, fecha_creacion)
+               VALUES (?,?,?,?)
+               ON CONFLICT(emisor_id, receptor_id) DO UPDATE SET
+                   estado=excluded.estado,
+                   fecha_creacion=excluded.fecha_creacion
+               RETURNING id""",
             (solicitud.emisor_id, solicitud.receptor_id, solicitud.estado,
              datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         )
+        row = cursor.fetchone()
         self._db.commit()
-        return self.obtener(cursor.lastrowid)
+        return self.obtener(row["id"]) if row else None
 
     def actualizar_estado(self, solicitud_id, nuevo_estado):
         self._db.execute(

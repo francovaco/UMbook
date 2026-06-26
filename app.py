@@ -524,7 +524,7 @@ def detalle_foto(foto_id):
     ctrl_mod = ModerarComentarioController()
     resultado = ctrl_mod.obtener_comentarios(session["usuario_id"], foto_id)
     if not resultado["ok"]:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
 
     ctrl_com = ComentarioController(session["usuario_id"])
     puede_comentar = ctrl_com.verificarPermiso(session["usuario_id"], foto_id)
@@ -557,7 +557,7 @@ def eliminar_comentario():
     comentario_id = request.form.get("comentario_id")
     foto_id = request.form.get("foto_id")
     if not comentario_id or not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ModerarComentarioController()
     resultado = ctrl.eliminar_comentario(
         session["usuario_id"], int(foto_id), int(comentario_id)
@@ -575,7 +575,7 @@ def publicar_comentario():
     foto_id = request.form.get("foto_id")
     contenido = request.form.get("contenido", "")
     if not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ComentarioController(session["usuario_id"])
     resultado = ctrl.publicarComentario(int(foto_id), contenido)
     if resultado["ok"]:
@@ -592,7 +592,7 @@ def editar_comentario():
     foto_id = request.form.get("foto_id")
     nuevo_contenido = request.form.get("contenido", "")
     if not comentario_id or not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ComentarioController(session["usuario_id"])
     resultado = ctrl.editarComentario(int(comentario_id), nuevo_contenido)
     if resultado["ok"]:
@@ -608,7 +608,7 @@ def eliminar_comentario_autor():
     comentario_id = request.form.get("comentario_id")
     foto_id = request.form.get("foto_id")
     if not comentario_id or not foto_id:
-        return redirect(url_for("mis_fotos"))
+        return redirect(url_for("albumes"))
     ctrl = ComentarioController(session["usuario_id"])
     resultado = ctrl.eliminarComentario(int(comentario_id))
     if resultado["ok"]:
@@ -634,7 +634,7 @@ def agregar_foto_demo():
     repo_com = RepositorioComentario()
     repo_com.guardar(Comentario(autor_id=session["usuario_id"],
                                 foto_id=foto.id, contenido="Mi comentario de demo"))
-    return redirect(url_for("mis_fotos"))
+    return redirect(url_for("albumes"))
 
 
 # ══════════════════════════════════════════════
