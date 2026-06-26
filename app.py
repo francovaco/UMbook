@@ -780,7 +780,7 @@ def admin_eliminar_comentario():
 if __name__ == "__main__":
     print("\n" + "="*60)
     print("  UMBook — Servidor iniciado")
-    print("  Abrí http://127.0.0.1:9000 en tu navegador")
+    print("  Abrí http://127.0.0.1:5000 en tu navegador")
     print("  Usuarios demo:")
     print("    vrodr@um.edu.ar  / 1234  (Valentina)")
     print("    mdiaz@um.edu.ar  / 1234  (Martín)")

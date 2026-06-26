@@ -2,7 +2,8 @@
 
 **Proyecto:** Ingeniería de Software 2026.
 
-**Franco Vaccarezza 63179**
+**Franco Vaccarezza 63179** CU-02, CU-06 y CU-13
+**Jose Manuel Diez de Oñate 63151** CU-01, CU_03 y CU-12
 
 ---
 
@@ -29,7 +30,7 @@ python3 app.py
 
 ### Acceder
 
-Abrí el navegador en `http://127.0.0.1:5000`
+Abrí el navegador en `http://127.0.0.1:9000`
 
 ### Usuarios de prueba
 
