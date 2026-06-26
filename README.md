@@ -8,6 +8,8 @@
 
 **Nicolás Bartolomeo Koninckx 63148** CU-08, CU-09 y CU-18
 
+**Josias Lautaro Vilches 63050** CU-05, CU-07 y CU-11
+
 ---
 
 ## Cómo ejecutar
@@ -81,6 +83,17 @@ Validaciones implementadas:
 - Mensaje claro cuando no se encuentran resultados
 - El usuario no aparece en sus propios resultados de búsqueda
 
+### CU-05 — Responder solicitud de amistad
+Acceso: barra superior → **Solicitudes**
+
+Permite al usuario visualizar, aceptar o rechazar solicitudes de amistad recibidas, así como enviar solicitudes a otros usuarios.
+
+Validaciones implementadas:
+- No es posible enviarse una solicitud a uno mismo
+- Verifica que los usuarios no sean ya amigos y que no haya una solicitud pendiente
+- Solo el receptor de la solicitud puede aceptarla o rechazarla
+- La solicitud debe estar en estado pendiente para ser respondida
+
 ### CU-06 — Eliminar amigo
 Acceso: barra superior → **Amigos**
 
@@ -90,26 +103,16 @@ Validaciones implementadas:
 - Verificación de existencia del vínculo antes de eliminar
 - Confirmación explícita mediante modal antes de ejecutar
 
-### CU-12 — Comentar fotos
-Acceso: barra superior → **Álbumes** → seleccionar foto
+### CU-07 — Ver sugerencias de amigos
+Acceso: navegación del sistema → **Sugerencias**
 
-Permite al usuario comentar fotos, editar sus propios comentarios y eliminarlos. El campo de comentario solo aparece si el usuario tiene permiso (es propietario o es amigo del propietario en un grupo con comentarios habilitados).
-
-Validaciones implementadas:
-- Verificación de permiso antes de mostrar el campo de comentario
-- El comentario no puede estar vacío
-- Solo el autor puede editar o eliminar su propio comentario
-- Confirmación explícita antes de eliminar
-
-### CU-13 — Moderar comentarios en fotos propias
-Acceso: barra superior → **Álbumes** → seleccionar foto
-
-Permite al propietario de una foto eliminar comentarios de sus amigos. El sistema verifica que el usuario sea dueño de la foto antes de mostrar la opción de eliminar. Si no es propietario, la opción no aparece.
+Sugiere amigos basándose en los amigos en común que tienen los usuarios. Solo muestra como sugerencia a aquellos usuarios con los que se tengan estrictamente más de 2 amigos en común.
 
 Validaciones implementadas:
-- Verificación de propiedad antes de mostrar controles de moderación
-- Confirmación explícita antes de eliminar
-- Eliminación permanente sin posibilidad de recuperación
+- Excluye de las sugerencias al propio usuario y a quienes ya son amigos
+- Filtra asegurando un mínimo de 3 amigos en común
+- Ordena los resultados de forma descendente por cantidad de amigos en común
+
 
 ### CU-08 — Gestionar grupos de amigos
 Acceso: barra superior → **Grupos**
@@ -131,6 +134,37 @@ Validaciones implementadas:
 - El grupo debe existir y pertenecer al usuario autenticado
 - Si no se selecciona ningún permiso, se muestra un aviso indicando que el grupo no tiene acciones habilitadas
 - Los permisos se aplican en tiempo real al momento de que un amigo intenta realizar una acción
+
+### CU-11 — Configurar visibilidad del álbum
+Acceso: barra superior → **Álbumes**
+
+Permite al propietario del álbum crear álbumes y configurar quién puede verlos. Las opciones de visibilidad son: Solo yo, Amigos, Grupo específico, o Todos.
+
+Validaciones implementadas:
+- El nombre del álbum es un campo obligatorio
+- La opción de visibilidad elegida debe ser válida dentro de las admitidas
+- Si la visibilidad es "Grupo específico", es obligatorio seleccionar un grupo
+
+### CU-12 — Comentar fotos
+Acceso: barra superior → **Álbumes** → seleccionar foto
+
+Permite al usuario comentar fotos, editar sus propios comentarios y eliminarlos. El campo de comentario solo aparece si el usuario tiene permiso (es propietario o es amigo del propietario en un grupo con comentarios habilitados).
+
+Validaciones implementadas:
+- Verificación de permiso antes de mostrar el campo de comentario
+- El comentario no puede estar vacío
+- Solo el autor puede editar o eliminar su propio comentario
+- Confirmación explícita antes de eliminar
+
+### CU-13 — Moderar comentarios en fotos propias
+Acceso: barra superior → **Álbumes** → seleccionar foto
+
+Permite al propietario de una foto eliminar comentarios de sus amigos. El sistema verifica que el usuario sea dueño de la foto antes de mostrar la opción de eliminar. Si no es propietario, la opción no aparece.
+
+Validaciones implementadas:
+- Verificación de propiedad antes de mostrar controles de moderación
+- Confirmación explícita antes de eliminar
+- Eliminación permanente sin posibilidad de recuperación
 
 ### CU-18 — Deshabilitar usuario
 Acceso: barra superior → **Admin** (solo visible para administradores)
@@ -188,6 +222,9 @@ umbook/
 │   ├── eliminar_amigo_controller.py    ← CU-06
 │   ├── moderar_comentario_controller.py← CU-13
 │   ├── grupos_controller.py            ← CU-08 y CU-09
+│   ├── solicitud_amistad_controller.py ← CU-05
+│   ├── sugerencias_amigos_controller.py← CU-07
+│   ├── visibilidad_album_controller.py ← CU-11
 │   └── admin_controller.py             ← CU-18
 ├── templates/                          ← Vistas HTML
 └── static/css/umbook.css               ← Estilos
