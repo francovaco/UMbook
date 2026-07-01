@@ -389,7 +389,7 @@ def editar_perfil():
         if archivo and archivo.filename:
             contenido = archivo.read()
             nombre_archivo = archivo.filename.lower()
-            # Pasar nombre y tamaño al controller para que valide (MVC correcto)
+            # Pasar nombre y tamaño al controller para que valide
             datos["foto_perfil"] = nombre_archivo
             datos["foto_perfil_bytes"] = len(contenido)
 

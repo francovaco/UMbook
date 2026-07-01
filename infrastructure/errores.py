@@ -15,12 +15,12 @@ class ErrorValidacion(ErrorUMBook):
 
 
 class ErrorNegocio(ErrorUMBook):
-    """Error de regla de negocio (ej: email duplicado, no es propietario)."""
+    """Error de regla de negocio.."""
     pass
 
 
 class ErrorSistema(ErrorUMBook):
-    """Error interno del sistema (ej: fallo de base de datos)."""
+    """Error interno del sistema."""
     pass
 
 
